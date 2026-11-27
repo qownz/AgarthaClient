@@ -1,0 +1,76 @@
+plugins {
+    id 'fabric-loom' version '1.13.6'
+    id 'java'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation files(
+        'libs/fabric-api-base-1.0.5+4ebb5c083e.jar',
+        'libs/fabric-key-binding-api-v1-1.1.7+4fc5413f3e.jar',
+        'libs/fabric-lifecycle-events-v1-2.6.15+4ebb5c083e.jar',
+        'libs/fabric-rendering-fluids-v1-3.1.43+4ebb5c083e.jar',
+        'libs/fabric-resource-loader-v0-3.3.4+4fc5413f3e.jar',
+        'libs/fabric-resource-loader-v1-1.0.10+78c8b4663e.jar',
+        'libs/fabric-screen-api-v1-3.1.7+4ebb5c083e.jar'
+    )
+
+    compileOnly "io.github.llamalad7:mixinextras-fabric:${project.mixinextras_version}"
+
+    implementation "io.github.spair:imgui-java-binding:${project.imgui_version}"
+    implementation("io.github.spair:imgui-java-lwjgl3:${project.imgui_version}") {
+        // Minecraft 1.21.11 ships LWJGL 3.3.3; imgui would otherwise drag in 3.3.6 and break STB calls.
+        exclude group: 'org.lwjgl'
+    }
+    runtimeOnly "io.github.spair:imgui-java-natives-linux:${project.imgui_version}"
+    implementation "org.jctools:jctools-core:${project.jctools_version}"
+    implementation "net.java.dev.jna:jna:${project.jna_version}"
+    implementation "net.java.dev.jna:jna-platform:${project.jna_version}"
+    implementation "io.netty:netty-codec-socks:${project.netty_version}"
+    implementation "io.netty:netty-handler-proxy:${project.netty_version}"
+
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '2000']
+}
+
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+loom {
+    runs {
+        client {
+            vmArg "-Dagartha.platform.force=true"
+        }
+    }
+}

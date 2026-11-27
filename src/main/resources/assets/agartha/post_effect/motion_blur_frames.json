@@ -1,0 +1,131 @@
+{
+	"targets": {
+		"swap": {}
+	},
+	"passes": [
+		{
+			"vertex_shader": "minecraft:core/screenquad",
+			"fragment_shader": "agartha:post/motion_blur_frames",
+			"inputs": [
+				{
+					"sampler_name": "Sample0",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample1",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample2",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample3",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample4",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample5",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample6",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample7",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample8",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample9",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample10",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "Sample11",
+					"target": "minecraft:main"
+				}
+			],
+			"output": "swap",
+			"uniforms": {
+				"FrameBlendConfig": [
+					{
+						"name": "WeightsA",
+						"type": "vec4",
+						"value": [
+							1.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					},
+					{
+						"name": "WeightsB",
+						"type": "vec4",
+						"value": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					},
+					{
+						"name": "WeightsC",
+						"type": "vec4",
+						"value": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					},
+					{
+						"name": "Info",
+						"type": "vec4",
+						"value": [
+							1.0,
+							1.0,
+							0.0,
+							0.0
+						]
+					}
+				]
+			}
+		},
+		{
+			"vertex_shader": "minecraft:core/screenquad",
+			"fragment_shader": "minecraft:post/blit",
+			"inputs": [
+				{
+					"sampler_name": "In",
+					"target": "swap"
+				}
+			],
+			"uniforms": {
+				"BlitConfig": [
+					{
+						"name": "ColorModulate",
+						"type": "vec4",
+						"value": [
+							1.0,
+							1.0,
+							1.0,
+							1.0
+						]
+					}
+				]
+			},
+			"output": "minecraft:main"
+		}
+	]
+}

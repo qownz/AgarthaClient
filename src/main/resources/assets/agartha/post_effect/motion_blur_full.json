@@ -1,0 +1,160 @@
+{
+	"targets": {
+		"swap": {}
+	},
+	"passes": [
+		{
+			"vertex_shader": "minecraft:core/screenquad",
+			"fragment_shader": "agartha:post/motion_blur_velocity",
+			"inputs": [
+				{
+					"sampler_name": "Main",
+					"target": "minecraft:main"
+				},
+				{
+					"sampler_name": "MainDepth",
+					"target": "minecraft:main",
+					"use_depth_buffer": true
+				}
+			],
+			"output": "swap",
+			"uniforms": {
+				"MotionBlurConfig": [
+					{
+						"name": "InvModelView",
+						"type": "matrix4x4",
+						"value": [
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0
+						]
+					},
+					{
+						"name": "InvProjection",
+						"type": "matrix4x4",
+						"value": [
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0
+						]
+					},
+					{
+						"name": "PrevModelView",
+						"type": "matrix4x4",
+						"value": [
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0
+						]
+					},
+					{
+						"name": "PrevProjection",
+						"type": "matrix4x4",
+						"value": [
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0,
+							0.0,
+							0.0,
+							0.0,
+							0.0,
+							1.0
+						]
+					},
+					{
+						"name": "CameraDelta",
+						"type": "vec4",
+						"value": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					},
+					{
+						"name": "Params",
+						"type": "vec4",
+						"value": [
+							0.0,
+							100.0,
+							1.0,
+							0.0
+						]
+					}
+				]
+			}
+		},
+		{
+			"vertex_shader": "minecraft:core/screenquad",
+			"fragment_shader": "minecraft:post/blit",
+			"inputs": [
+				{
+					"sampler_name": "In",
+					"target": "swap"
+				}
+			],
+			"uniforms": {
+				"BlitConfig": [
+					{
+						"name": "ColorModulate",
+						"type": "vec4",
+						"value": [
+							1.0,
+							1.0,
+							1.0,
+							1.0
+						]
+					}
+				]
+			},
+			"output": "minecraft:main"
+		}
+	]
+}
