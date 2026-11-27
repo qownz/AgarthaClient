@@ -29,18 +29,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.d.a_pkg.i;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.f;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.a_o;
-import net.agartha.client.util.ac;
-import net.agartha.client.util.ad;
-import net.agartha.client.util.l;
-import net.agartha.client.util.w;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.TracerOverlay;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.color.ColorSettingWiring;
+import net.agartha.client.util.render.FadeTracker;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.render.LabelStacker;
+import net.agartha.client.util.render.OffscreenIndicator;
+import net.agartha.client.util.render.PlateRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -57,30 +61,30 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 
 @Environment(EnvType.CLIENT)
-public final class PlayerBypassModule extends b implements f {
+public final class PlayerBypassModule extends Module implements TracerOverlay {
    private static final int RENDER_DISTANCE_CHUNKS = 16;
    private static final double PLATE_HEIGHT = 0.35;
    private static final float LINE_WIDTH = 1.5F;
    private static final int YELLOW = -13312;
    static final int BASE_CEILING_Y = 62;
    static final int NIBBLES_PER_SECTION = 2048;
-   private final net.agartha.client.module.a_pkg.b customColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", true)
+   private final BooleanSetting customColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", true)
    );
-   private final c color = (c)this.addSetting(new c("Color", -13312));
-   private final net.agartha.client.module.a_pkg.b themeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", false)
+   private final ColorSetting color = (ColorSetting)this.addSetting(new ColorSetting("Color", -13312));
+   private final BooleanSetting themeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", false)
    );
-   private final j plateY = (j)this.addSetting(new j("Plate Y", 60.0F, -64.0F, 320.0F).whole());
-   private final net.agartha.client.module.a_pkg.b tracers = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Tracers", false));
+   private final NumberSetting plateY = (NumberSetting)this.addSetting(new NumberSetting("Plate Y", 60.0F, -64.0F, 320.0F).whole());
+   private final BooleanSetting tracers = (BooleanSetting)this.addSetting(new BooleanSetting("Tracers", false));
    private final Map<Long, PlayerBypassModule.Snapshot> snapshots = new HashMap<>();
    private final Set<Long> alerted = new HashSet<>();
    private final Map<Long, PlayerBypassModule.Snapshot> held = new HashMap<>();
    private final PlayerBypassModule.EntryGuard entryGuard = new PlayerBypassModule.EntryGuard();
    private final PlayerBypassModule.ProtectedChunks protectedChunks = new PlayerBypassModule.ProtectedChunks();
    private ClientWorld level;
-   private final a_o fade = new a_o(0.7F, 0.5F);
-   private final net.agartha.client.util.a_o.a fadingPlate = this::drawPlate;
+   private final FadeTracker fade = new FadeTracker(0.7F, 0.5F);
+   private final FadeTracker.a fadingPlate = this::drawPlate;
    private int frameLine;
    private int frameFill;
    private ImDrawList tracerList;
@@ -90,15 +94,15 @@ public final class PlayerBypassModule extends b implements f {
    private float tracerOriginX;
    private float tracerOriginY;
    private int tracerColor;
-   private final net.agartha.client.util.a_o.a plateTracer = this::tracerTo;
+   private final FadeTracker.a plateTracer = this::tracerTo;
 
    public PlayerBypassModule() {
-      super("Player Bypass", "Marks chunks with a hidden underground base.", net.agartha.client.module.c.DONUT);
-      ac.wireExclusiveColorSource(this.customColor, this.themeColor, this.color, false);
+      super("Player Bypass", "Marks chunks with a hidden underground base.", ModuleCategory.DONUT);
+      ColorSettingWiring.wireExclusiveColorSource(this.customColor, this.themeColor, this.color, false);
    }
 
    private int plateColor() {
-      return ac.argb(this.themeColor, this.customColor, this.color, -13312);
+      return ColorSettingWiring.argb(this.themeColor, this.customColor, this.color, -13312);
    }
 
    protected void onDisable() {
@@ -111,8 +115,8 @@ public final class PlayerBypassModule extends b implements f {
       this.protectedChunks.select(null, null);
    }
 
-   @net.agartha.client.d.f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       this.syncLevel(var2);
       if (this.level != null && var2.player != null) {
@@ -122,8 +126,8 @@ public final class PlayerBypassModule extends b implements f {
       this.protectedChunks.tickAutosave();
    }
 
-   @net.agartha.client.d.f
-   public void onPacketReceive(i arg) {
+   @EventListener
+   public void onPacketReceive(PacketReceiveEvent arg) {
       int var2;
       int var3;
       LightData var4;
@@ -249,8 +253,8 @@ public final class PlayerBypassModule extends b implements f {
       return this.level != null && this.level.getChunkManager().isChunkLoaded(ChunkPos.getPackedX(l), ChunkPos.getPackedZ(l));
    }
 
-   @net.agartha.client.d.f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          int var3 = this.plateColor();
@@ -270,7 +274,7 @@ public final class PlayerBypassModule extends b implements f {
                int var14 = ChunkPos.getPackedZ(var11);
                if (Math.abs(var13 - var6) <= 16 && Math.abs(var14 - var7) <= 16) {
                   float var15 = this.fade.show(var11);
-                  if (!l.columnOutOfView(var13, var14, var8, var8)) {
+                  if (!FrustumCulling.columnOutOfView(var13, var14, var8, var8)) {
                      this.drawPlate(var11, var15);
                   }
                }
@@ -285,11 +289,11 @@ public final class PlayerBypassModule extends b implements f {
       if (!(f <= 0.01F)) {
          double var4 = ChunkPos.getPackedX(l) << 4;
          double var6 = ChunkPos.getPackedZ(l) << 4;
-         double var8 = 8.0 * (1.0 - a_o.pop(f));
-         double var10 = net.agartha.client.util.o.y(2, l, var4, this.plateY.get(), var6, var4 + 16.0, var6 + 16.0, 0.35) + a_o.rise(f);
+         double var8 = 8.0 * (1.0 - FadeTracker.pop(f));
+         double var10 = LabelStacker.y(2, l, var4, this.plateY.get(), var6, var4 + 16.0, var6 + 16.0, 0.35) + FadeTracker.rise(f);
          Box var12 = new Box(var4 + var8, var10, var6 + var8, var4 + 16.0 - var8, var10 + 0.35, var6 + 16.0 - var8);
-         if (net.agartha.client.util.l.isSafeCuboid(var12)) {
-            w.plate(2, var12, scaleAlpha(this.frameLine, f), 1.5F, scaleAlpha(this.frameFill, f));
+         if (FrustumCulling.isSafeCuboid(var12)) {
+            PlateRenderer.plate(2, var12, scaleAlpha(this.frameLine, f), 1.5F, scaleAlpha(this.frameFill, f));
          }
       }
    }
@@ -311,8 +315,8 @@ public final class PlayerBypassModule extends b implements f {
             this.tracerMc = var4;
             this.tracerW = f;
             this.tracerH = g;
-            this.tracerOriginX = ad.originX(f);
-            this.tracerOriginY = ad.originY("Crosshair", g);
+            this.tracerOriginX = OffscreenIndicator.originX(f);
+            this.tracerOriginY = OffscreenIndicator.originY("Crosshair", g);
             this.tracerColor = 0xFF000000 | this.plateColor() & 16777215;
             this.fade.forEachVisible(this.plateTracer);
             this.tracerList = null;
@@ -323,8 +327,8 @@ public final class PlayerBypassModule extends b implements f {
    private void tracerTo(long l, float f) {
       double var4 = ChunkPos.getPackedX(l) << 4;
       double var6 = ChunkPos.getPackedZ(l) << 4;
-      double var8 = net.agartha.client.util.o.y(2, l, var4, this.plateY.get(), var6, var4 + 16.0, var6 + 16.0, 0.35) + a_o.rise(f);
-      ad.draw(
+      double var8 = LabelStacker.y(2, l, var4, this.plateY.get(), var6, var4 + 16.0, var6 + 16.0, 0.35) + FadeTracker.rise(f);
+      OffscreenIndicator.draw(
          this.tracerList,
          this.tracerMc,
          this.tracerW,

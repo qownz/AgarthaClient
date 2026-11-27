@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.o;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SkinChangeModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.item.HeldItemRenderer;
@@ -19,7 +19,7 @@ public abstract class MixinSkinFirstPerson {
       require = 0
    )
    private Identifier agartha$armSkin(Identifier identifier) {
-      o var2 = e.get(o.class);
+      SkinChangeModule var2 = ModuleManager.get(SkinChangeModule.class);
       if (var2 == null) {
          return identifier;
       } else {

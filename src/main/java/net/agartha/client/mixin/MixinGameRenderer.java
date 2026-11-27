@@ -1,8 +1,8 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.f.a;
-import net.agartha.client.k.b_o;
-import net.agartha.client.util.j;
+import net.agartha.client.render.imgui.ImGuiManager;
+import net.agartha.client.util.io.ScreenshotCapture;
+import net.agartha.client.util.perf.Profiler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.util.Window;
@@ -19,8 +19,8 @@ public abstract class MixinGameRenderer {
       at = {@At("HEAD")}
    )
    private void agartha$beforeSwap(CallbackInfo callbackInfo) {
-      b_o.framePresented();
-      a.getInstance().renderIfActive();
-      j.captureIfPending();
+      Profiler.framePresented();
+      ImGuiManager.getInstance().renderIfActive();
+      ScreenshotCapture.captureIfPending();
    }
 }

@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.l.a_pkg.d;
+import net.agartha.client.render.post.MotionBlurRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.GameRenderer;
@@ -17,6 +17,6 @@ public abstract class MixinMotionBlurGameRenderer {
       at = {@At("TAIL")}
    )
    private void agartha$motionBlurAfterHand(CallbackInfo callbackInfo) {
-      d.afterHand();
+      MotionBlurRenderer.afterHand();
    }
 }

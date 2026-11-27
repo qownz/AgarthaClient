@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.b;
-import net.agartha.client.module.impl.render.s;
+import net.agartha.client.event.impl.ChatSendEvent;
+import net.agartha.client.module.impl.render.StorageEspModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -20,7 +20,7 @@ public abstract class MixinClientPacketListener {
       cancellable = true
    )
    private void agartha$onSendChat(String string, CallbackInfo callbackInfo) {
-      if (b.dispatch(string)) {
+      if (ChatSendEvent.dispatch(string)) {
          callbackInfo.cancel();
       }
    }
@@ -31,7 +31,7 @@ public abstract class MixinClientPacketListener {
       cancellable = true
    )
    private void agartha$onSendCommand(String string, CallbackInfo callbackInfo) {
-      if (b.dispatch("/" + string)) {
+      if (ChatSendEvent.dispatch("/" + string)) {
          callbackInfo.cancel();
       }
    }
@@ -41,6 +41,6 @@ public abstract class MixinClientPacketListener {
       at = {@At("TAIL")}
    )
    private void agartha$chunkLoaded(ChunkDataS2CPacket chunkDataS2CPacket, CallbackInfo callbackInfo) {
-      s.onChunkLoaded(chunkDataS2CPacket);
+      StorageEspModule.onChunkLoaded(chunkDataS2CPacket);
    }
 }

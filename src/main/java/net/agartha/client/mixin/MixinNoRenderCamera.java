@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.enums.CameraSubmersionType;
@@ -20,7 +20,7 @@ public abstract class MixinNoRenderCamera {
       cancellable = true
    )
    private void agartha$noLiquidFog(CallbackInfoReturnable<CameraSubmersionType> callbackInfoReturnable) {
-      m var2 = e.get(m.class);
+      NoRenderModule var2 = ModuleManager.get(NoRenderModule.class);
       if (var2 != null && var2.noLiquidOverlay()) {
          callbackInfoReturnable.setReturnValue(CameraSubmersionType.NONE);
       }

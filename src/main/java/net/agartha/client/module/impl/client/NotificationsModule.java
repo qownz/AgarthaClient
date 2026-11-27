@@ -1,34 +1,35 @@
 package net.agartha.client.module.impl.client;
 
 import java.util.Locale;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.i;
-import net.agartha.client.module.a_pkg.j;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.EnumSetting;
+import net.agartha.client.module.setting.NumberSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public final class NotificationsModule extends b {
+public final class NotificationsModule extends Module {
    public static final String SOUND_POP_1 = "Pop 1";
    public static final String SOUND_POP_2 = "Pop 2";
    public static final String SOUND_FAHH = "Fahh";
    private static final float VOLUME_UI_MAX = 5.0F;
    private static final float VOLUME_STEP = 0.2F;
-   private final net.agartha.client.module.a_pkg.b moduleToggles = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Module Toggles", false)
+   private final BooleanSetting moduleToggles = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Module Toggles", false)
    );
-   private final net.agartha.client.module.a_pkg.b alerts = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Alerts", false));
-   private final net.agartha.client.module.a_pkg.b sound = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Sound", false));
-   private final j duration = (j)this.addSetting(new j("Duration", 2.0F, 1.0F, 10.0F));
-   private final i soundEffect = (i)this.addSetting(new i("Sound Effect", "Pop 2", new String[]{"Pop 2", "Pop 1", "Fahh"}));
-   private final j volume = (j)this.addSetting(new j("Volume", 1.0F, 0.0F, 5.0F));
-   private final i notificationCorner = (i)this.addSetting(
-      new i("Notification Position", "Bottom Left", new String[]{"Top Left", "Top Right", "Bottom Left", "Bottom Right"})
+   private final BooleanSetting alerts = (BooleanSetting)this.addSetting(new BooleanSetting("Alerts", false));
+   private final BooleanSetting sound = (BooleanSetting)this.addSetting(new BooleanSetting("Sound", false));
+   private final NumberSetting duration = (NumberSetting)this.addSetting(new NumberSetting("Duration", 2.0F, 1.0F, 10.0F));
+   private final EnumSetting soundEffect = (EnumSetting)this.addSetting(new EnumSetting("Sound Effect", "Pop 2", new String[]{"Pop 2", "Pop 1", "Fahh"}));
+   private final NumberSetting volume = (NumberSetting)this.addSetting(new NumberSetting("Volume", 1.0F, 0.0F, 5.0F));
+   private final EnumSetting notificationCorner = (EnumSetting)this.addSetting(
+      new EnumSetting("Notification Position", "Bottom Left", new String[]{"Top Left", "Top Right", "Bottom Left", "Bottom Right"})
    );
 
    public NotificationsModule() {
-      super("Notifications", "Toast cards, module alerts, and notification sounds.", c.CLIENT);
+      super("Notifications", "Toast cards, module alerts, and notification sounds.", ModuleCategory.CLIENT);
       this.soundEffect.visibleWhen(this.sound::get);
       this.volume.visibleWhen(this.sound::get);
       this.notificationCorner.visibleWhen(() -> false);
@@ -62,7 +63,7 @@ public final class NotificationsModule extends b {
       return this.notificationCorner.get();
    }
 
-   public i notificationCornerSetting() {
+   public EnumSetting notificationCornerSetting() {
       return this.notificationCorner;
    }
 

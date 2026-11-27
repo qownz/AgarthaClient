@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.l.a_pkg.e;
+import net.agartha.client.render.post.PostEffectLoader;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gl.ShaderLoader;
@@ -18,7 +18,7 @@ public abstract class MixinShaderManager {
       cancellable = true
    )
    private void agartha$keepPacksForOwnChains(Exception exception, CallbackInfo callbackInfo) {
-      if (e.isLoading()) {
+      if (PostEffectLoader.isLoading()) {
          callbackInfo.cancel();
       }
    }

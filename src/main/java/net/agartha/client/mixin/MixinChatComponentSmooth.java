@@ -3,7 +3,7 @@ package net.agartha.client.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.agartha.client.module.e;
+import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.client.UtilitiesModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -64,7 +64,7 @@ public abstract class MixinChatComponentSmooth {
    private void agartha$smoothChat(
       ChatHud chatHud, Backend backend, int i, int j, boolean bl, Operation<Void> operation, @Local(argsOnly = true) DrawContext drawContext
    ) {
-      UtilitiesModule var8 = e.get(UtilitiesModule.class);
+      UtilitiesModule var8 = ModuleManager.get(UtilitiesModule.class);
       float var9 = var8 != null && var8.smoothChat() ? this.agartha$displacement() : 0.0F;
       if (var9 != 0.0F) {
          drawContext.getMatrices().pushMatrix();

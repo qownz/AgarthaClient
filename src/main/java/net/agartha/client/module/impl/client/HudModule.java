@@ -1,73 +1,74 @@
 package net.agartha.client.module.impl.client;
 
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.i;
-import net.agartha.client.module.a_pkg.j;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.EnumSetting;
+import net.agartha.client.module.setting.NumberSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public final class HudModule extends b {
+public final class HudModule extends Module {
    public static final String MODE_1 = "Mode 1";
    public static final String MODE_2 = "Mode 2";
-   private final i hudMode = (i)this.addSetting(new i("HUD Mode", "Mode 1", new String[]{"Mode 1", "Mode 2"}));
-   private final j transparency = (j)this.addSetting(new j("HUD Opacity", 0.5F, 0.15F, 0.85F));
-   private final net.agartha.client.module.a_pkg.b fps = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("FPS", true));
-   private final net.agartha.client.module.a_pkg.b ping = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Ping", true));
-   private final net.agartha.client.module.a_pkg.b coordinates = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Coordinates", false)
+   private final EnumSetting hudMode = (EnumSetting)this.addSetting(new EnumSetting("HUD Mode", "Mode 1", new String[]{"Mode 1", "Mode 2"}));
+   private final NumberSetting transparency = (NumberSetting)this.addSetting(new NumberSetting("HUD Opacity", 0.5F, 0.15F, 0.85F));
+   private final BooleanSetting fps = (BooleanSetting)this.addSetting(new BooleanSetting("FPS", true));
+   private final BooleanSetting ping = (BooleanSetting)this.addSetting(new BooleanSetting("Ping", true));
+   private final BooleanSetting coordinates = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Coordinates", false)
    );
-   private final net.agartha.client.module.a_pkg.b brandBox = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Agartha+", true));
-   private final net.agartha.client.module.a_pkg.b positionBox = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Position", true));
-   private final net.agartha.client.module.a_pkg.b netherCoords = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Nether Coordinates", false)
+   private final BooleanSetting brandBox = (BooleanSetting)this.addSetting(new BooleanSetting("Agartha+", true));
+   private final BooleanSetting positionBox = (BooleanSetting)this.addSetting(new BooleanSetting("Position", true));
+   private final BooleanSetting netherCoords = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Nether Coordinates", false)
    );
-   private final net.agartha.client.module.a_pkg.b clock = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Time", true));
-   private final net.agartha.client.module.a_pkg.b server = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Server Address", true)
+   private final BooleanSetting clock = (BooleanSetting)this.addSetting(new BooleanSetting("Time", true));
+   private final BooleanSetting server = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Server Address", true)
    );
-   private final net.agartha.client.module.a_pkg.b tps = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Server TPS", false));
-   private final net.agartha.client.module.a_pkg.b players = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Players Online", false)
+   private final BooleanSetting tps = (BooleanSetting)this.addSetting(new BooleanSetting("Server TPS", false));
+   private final BooleanSetting players = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Players Online", false)
    );
-   private final net.agartha.client.module.a_pkg.b memory = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Memory", false));
-   private final net.agartha.client.module.a_pkg.b speed = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Speed (BPS)", false));
-   private final net.agartha.client.module.a_pkg.b direction = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Facing", false));
-   private final net.agartha.client.module.a_pkg.b regionMap = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Region Map", true));
-   private final net.agartha.client.module.a_pkg.b keybindsHud = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Keybinds List", true)
+   private final BooleanSetting memory = (BooleanSetting)this.addSetting(new BooleanSetting("Memory", false));
+   private final BooleanSetting speed = (BooleanSetting)this.addSetting(new BooleanSetting("Speed (BPS)", false));
+   private final BooleanSetting direction = (BooleanSetting)this.addSetting(new BooleanSetting("Facing", false));
+   private final BooleanSetting regionMap = (BooleanSetting)this.addSetting(new BooleanSetting("Region Map", true));
+   private final BooleanSetting keybindsHud = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Keybinds List", true)
    );
-   private final net.agartha.client.module.a_pkg.b potions = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Effects", true));
-   private final net.agartha.client.module.a_pkg.b armorHud = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Armor HUD", false));
-   private final i armorLayout = (i)this.addSetting(new i("Armor Layout", "Horizontal", new String[]{"Horizontal", "Vertical"}));
-   private final net.agartha.client.module.a_pkg.b armorPercent = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Armor Durability", true)
+   private final BooleanSetting potions = (BooleanSetting)this.addSetting(new BooleanSetting("Effects", true));
+   private final BooleanSetting armorHud = (BooleanSetting)this.addSetting(new BooleanSetting("Armor HUD", false));
+   private final EnumSetting armorLayout = (EnumSetting)this.addSetting(new EnumSetting("Armor Layout", "Horizontal", new String[]{"Horizontal", "Vertical"}));
+   private final BooleanSetting armorPercent = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Armor Durability", true)
    );
-   private final net.agartha.client.module.a_pkg.b armorBox = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Armor Box", true));
-   private final net.agartha.client.module.a_pkg.b inventoryHud = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Inventory HUD", false)
+   private final BooleanSetting armorBox = (BooleanSetting)this.addSetting(new BooleanSetting("Armor Box", true));
+   private final BooleanSetting inventoryHud = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Inventory HUD", false)
    );
-   private final net.agartha.client.module.a_pkg.b staffListHud = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Staff List", false)
+   private final BooleanSetting staffListHud = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Staff List", false)
    );
    private static final int STAFF_ROWS = 6;
-   private final net.agartha.client.module.a_pkg.b staffShowAll = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show All Staff", false)
+   private final BooleanSetting staffShowAll = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show All Staff", false)
    );
-   private final net.agartha.client.module.a_pkg.b spotifyHud = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Spotify HUD", true)
+   private final BooleanSetting spotifyHud = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Spotify HUD", true)
    );
-   private final net.agartha.client.module.a_pkg.b iconAnimations = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Agartha Icon Animations", true)
+   private final BooleanSetting iconAnimations = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Agartha Icon Animations", true)
    );
-   private final j iconAnimationGap = (j)this.addSetting(new j("Icon Animation Delay", 45.0F, 4.0F, 120.0F));
+   private final NumberSetting iconAnimationGap = (NumberSetting)this.addSetting(new NumberSetting("Icon Animation Delay", 45.0F, 4.0F, 120.0F));
 
    public HudModule() {
       super(
          "HUD",
          "Picks which HUD elements show and how: info bar or separate boxes, coordinates, effects, region map, armor, inventory, lists and more.",
-         c.CLIENT
+         ModuleCategory.CLIENT
       );
       this.iconAnimationGap.visibleWhen(this.iconAnimations::get);
       this.staffShowAll.visibleWhen(this.staffListHud::get);
@@ -93,23 +94,23 @@ public final class HudModule extends b {
       return this.hudMode.is("Mode 2");
    }
 
-   public net.agartha.client.module.a_pkg.b regionMapSetting() {
+   public BooleanSetting regionMapSetting() {
       return this.regionMap;
    }
 
-   public net.agartha.client.module.a_pkg.b armorHudSetting() {
+   public BooleanSetting armorHudSetting() {
       return this.armorHud;
    }
 
-   public i armorLayoutSetting() {
+   public EnumSetting armorLayoutSetting() {
       return this.armorLayout;
    }
 
-   public net.agartha.client.module.a_pkg.b armorPercentSetting() {
+   public BooleanSetting armorPercentSetting() {
       return this.armorPercent;
    }
 
-   public net.agartha.client.module.a_pkg.b armorBoxSetting() {
+   public BooleanSetting armorBoxSetting() {
       return this.armorBox;
    }
 

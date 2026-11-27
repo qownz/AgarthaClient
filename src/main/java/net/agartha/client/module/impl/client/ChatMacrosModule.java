@@ -1,51 +1,54 @@
 package net.agartha.client.module.impl.client;
 
-import net.agartha.client.d.f;
-import net.agartha.client.d.i;
-import net.agartha.client.d.a_pkg.g;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.j.a;
-import net.agartha.client.j.d;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.EventPriority;
+import net.agartha.client.event.impl.ChatSendEvent;
+import net.agartha.client.event.impl.KeyInputEvent;
+import net.agartha.client.event.impl.MouseInputEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.macro.ChatMacro;
+import net.agartha.client.macro.MacroManager;
+import net.agartha.client.macro.MacroScheduler;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
 @Environment(EnvType.CLIENT)
-public final class ChatMacrosModule extends b {
+public final class ChatMacrosModule extends Module {
    public ChatMacrosModule() {
-      super("Chat Macros", "Keybind-triggered chat message macros.", c.CLIENT);
+      super("Chat Macros", "Keybind-triggered chat message macros.", ModuleCategory.CLIENT);
       this.setEnabled(true);
    }
 
    protected void onDisable() {
-      net.agartha.client.j.b.clearAll();
+      MacroScheduler.clearAll();
    }
 
-   @f
-   public void onChatSend(net.agartha.client.d.a_pkg.b arg) {
+   @EventListener
+   public void onChatSend(ChatSendEvent arg) {
       if (this.isEnabled()) {
-         if (net.agartha.client.j.b.tryHandleCommand(arg.message)) {
+         if (MacroScheduler.tryHandleCommand(arg.message)) {
             arg.setCancelled(true);
          }
       }
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       if (this.isEnabled()) {
-         net.agartha.client.j.b.tick();
+         MacroScheduler.tick();
       }
    }
 
-   @f(
-      priority = i.HIGH
+   @EventListener(
+      priority = EventPriority.HIGH
    )
-   public void onKey(net.agartha.client.d.a_pkg.f arg) {
+   public void onKey(KeyInputEvent arg) {
       if (this.isEnabled() && arg.action != 0) {
          if (canTriggerInWorld()) {
-            for (a var3 : d.getInstance().all()) {
+            for (ChatMacro var3 : MacroManager.getInstance().all()) {
                if (var3.onAction(true, arg.key, arg.mods)) {
                   return;
                }
@@ -54,13 +57,13 @@ public final class ChatMacrosModule extends b {
       }
    }
 
-   @f(
-      priority = i.HIGH
+   @EventListener(
+      priority = EventPriority.HIGH
    )
-   public void onMouse(g arg) {
+   public void onMouse(MouseInputEvent arg) {
       if (this.isEnabled() && arg.action != 0) {
          if (canTriggerInWorld()) {
-            for (a var3 : d.getInstance().all()) {
+            for (ChatMacro var3 : MacroManager.getInstance().all()) {
                if (var3.onAction(false, arg.button, arg.mods)) {
                   return;
                }

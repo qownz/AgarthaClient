@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.util.ae;
+import net.agartha.client.util.render.TracerLineBatch;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
@@ -22,6 +22,6 @@ public abstract class MixinTracerLayerGui {
       )}
    )
    private void agartha$tracers(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      ae.render(drawContext);
+      TracerLineBatch.render(drawContext);
    }
 }

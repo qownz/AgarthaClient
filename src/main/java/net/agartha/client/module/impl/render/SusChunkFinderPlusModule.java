@@ -6,11 +6,12 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
 import java.util.List;
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.i;
-import net.agartha.client.d.a_pkg.p;
-import net.agartha.client.k.c;
-import net.agartha.client.util.y.g;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.EndClientTickEvent;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.ScanFrameEvent;
+import net.agartha.client.util.perf.TimeSlice;
+import net.agartha.client.util.world.GeodeAnalyzer.g;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
@@ -39,7 +40,7 @@ public final class SusChunkFinderPlusModule extends SusChunkFinderModule {
    private final Long2IntOpenHashMap overdue = new Long2IntOpenHashMap();
    private final LongArrayFIFOQueue growthQueue = new LongArrayFIFOQueue();
    private final LongOpenHashSet growthQueued = new LongOpenHashSet();
-   private final c growthSlice = new c();
+   private final TimeSlice growthSlice = new TimeSlice();
    private final Mutable cursor = new Mutable();
    private ClientWorld growthLevel;
    private int refill;
@@ -113,8 +114,8 @@ public final class SusChunkFinderPlusModule extends SusChunkFinderModule {
       return var6;
    }
 
-   @f
-   public void onGrowthPacket(i arg) {
+   @EventListener
+   public void onGrowthPacket(PacketReceiveEvent arg) {
       if (arg.packet instanceof ChunkDataS2CPacket var2) {
          long var6 = ChunkPos.toLong(var2.getChunkX(), var2.getChunkZ());
          this.overdue.remove(var6);
@@ -126,8 +127,8 @@ public final class SusChunkFinderPlusModule extends SusChunkFinderModule {
       }
    }
 
-   @f
-   public void onGrowthTick(net.agartha.client.d.a_pkg.c arg) {
+   @EventListener
+   public void onGrowthTick(EndClientTickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null && var3.getRegistryKey() == World.OVERWORLD) {
@@ -163,8 +164,8 @@ public final class SusChunkFinderPlusModule extends SusChunkFinderModule {
       }
    }
 
-   @f
-   public void onGrowthScanFrame(p arg) {
+   @EventListener
+   public void onGrowthScanFrame(ScanFrameEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var3 == this.growthLevel && !this.growthQueue.isEmpty()) {

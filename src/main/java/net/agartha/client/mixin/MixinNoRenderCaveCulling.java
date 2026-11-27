@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.ChunkRenderingDataPreparer;
@@ -19,7 +19,7 @@ public abstract class MixinNoRenderCaveCulling {
       ordinal = 0
    )
    private boolean agartha$noCaveCulling(boolean bl) {
-      m var2 = e.get(m.class);
+      NoRenderModule var2 = ModuleManager.get(NoRenderModule.class);
       return var2 != null && var2.noCaveCulling() ? false : bl;
    }
 }

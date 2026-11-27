@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.g;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.BlockOverlayModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.WorldRenderer;
@@ -19,7 +19,7 @@ public abstract class MixinBlockOverlayLevelRenderer {
       cancellable = true
    )
    private void agartha$blockOverlay(CallbackInfo callbackInfo) {
-      g var2 = e.get(g.class);
+      BlockOverlayModule var2 = ModuleManager.get(BlockOverlayModule.class);
       if (var2 != null && var2.replacesVanillaOutline()) {
          callbackInfo.cancel();
       }

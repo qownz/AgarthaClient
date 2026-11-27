@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.Camera;
@@ -25,7 +25,7 @@ public abstract class MixinNoRenderDarknessFog {
    private void agartha$noDarkness(
       FogData fogData, Camera camera, ClientWorld clientWorld, float f, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo
    ) {
-      m var7 = e.get(m.class);
+      NoRenderModule var7 = ModuleManager.get(NoRenderModule.class);
       if (var7 != null && var7.noDarkness()) {
          callbackInfo.cancel();
       }

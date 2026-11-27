@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import net.agartha.client.l.a_pkg.d;
+import net.agartha.client.render.post.MotionBlurRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.Camera;
@@ -35,7 +35,7 @@ public abstract class MixinMotionBlurLevelRenderer {
       boolean bl2,
       CallbackInfo callbackInfo
    ) {
-      d.beginLevel(objectAllocator, camera, matrix4f, matrix4f2);
+      MotionBlurRenderer.beginLevel(objectAllocator, camera, matrix4f, matrix4f2);
    }
 
    @Inject(
@@ -43,7 +43,7 @@ public abstract class MixinMotionBlurLevelRenderer {
       at = {@At("HEAD")}
    )
    private void agartha$motionBlurBeforeEntities(CallbackInfo callbackInfo) {
-      d.beforeEntities();
+      MotionBlurRenderer.beforeEntities();
    }
 
    @Inject(
@@ -51,6 +51,6 @@ public abstract class MixinMotionBlurLevelRenderer {
       at = {@At("TAIL")}
    )
    private void agartha$motionBlurAfterLevel(CallbackInfo callbackInfo) {
-      d.afterLevel();
+      MotionBlurRenderer.afterLevel();
    }
 }

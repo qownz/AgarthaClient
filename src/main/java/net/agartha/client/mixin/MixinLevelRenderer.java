@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.o;
+import net.agartha.client.event.impl.Render3DEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -23,7 +23,7 @@ public abstract class MixinLevelRenderer {
    )
    private Frustum agartha$onRenderLevel(Frustum frustum) {
       float var2 = MinecraftClient.getInstance().getRenderTickCounter().getTickProgress(false);
-      o.dispatch(null, var2, null, frustum);
+      Render3DEvent.dispatch(null, var2, null, frustum);
       return frustum;
    }
 }

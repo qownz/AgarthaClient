@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.d;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.AutoReconnectModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -24,7 +24,7 @@ public abstract class MixinConnectScreen {
    private static void agartha$captureLastServer(
       MinecraftClient minecraftClient, ServerAddress serverAddress, ServerInfo serverInfo, CookieStorage cookieStorage, CallbackInfo callbackInfo
    ) {
-      d var5 = e.get(d.class);
+      AutoReconnectModule var5 = ModuleManager.get(AutoReconnectModule.class);
       if (var5 != null) {
          var5.setLastServerConnection(serverAddress, serverInfo);
       }

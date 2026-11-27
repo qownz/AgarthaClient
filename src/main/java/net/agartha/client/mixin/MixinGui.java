@@ -1,11 +1,13 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.n;
-import net.agartha.client.module.e;
+import net.agartha.client.event.impl.Render2DEvent;
+import net.agartha.client.gui.CrosshairHud;
+import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.client.CrosshairModule;
 import net.agartha.client.module.impl.misc.FakeScoreboardModule;
-import net.agartha.client.module.impl.render.d;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.impl.misc.NameProtectModule;
+import net.agartha.client.module.impl.render.FreelookModule;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -31,7 +33,7 @@ public abstract class MixinGui {
       at = {@At("TAIL")}
    )
    private void agartha$onRender2D(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      n.dispatch(drawContext, renderTickCounter.getTickProgress(false));
+      Render2DEvent.dispatch(drawContext, renderTickCounter.getTickProgress(false));
    }
 
    @Inject(
@@ -49,16 +51,16 @@ public abstract class MixinGui {
       cancellable = true
    )
    private void agartha$customCrosshair(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      if (d.hidesCrosshair()) {
+      if (FreelookModule.hidesCrosshair()) {
          callbackInfo.cancel();
       } else {
-         CrosshairModule var4 = e.get(CrosshairModule.class);
+         CrosshairModule var4 = ModuleManager.get(CrosshairModule.class);
          if (var4 != null && var4.isEnabled()) {
-            m var5 = e.get(m.class);
+            NoRenderModule var5 = ModuleManager.get(NoRenderModule.class);
             if (var5 == null || !var5.noCrosshair()) {
-               if (net.agartha.client.e.m.shouldDraw(MinecraftClient.getInstance())) {
+               if (CrosshairHud.shouldDraw(MinecraftClient.getInstance())) {
                   callbackInfo.cancel();
-                  net.agartha.client.e.m.render(drawContext, var4);
+                  CrosshairHud.render(drawContext, var4);
                }
             }
          }
@@ -132,12 +134,12 @@ public abstract class MixinGui {
    }
 
    private Text agartha$protectScoreLine(Text text) {
-      FakeScoreboardModule var2 = e.get(FakeScoreboardModule.class);
+      FakeScoreboardModule var2 = ModuleManager.get(FakeScoreboardModule.class);
       if (var2 != null && var2.isEnabled()) {
          return text;
       } else {
          try {
-            net.agartha.client.module.impl.misc.m var3 = e.get(net.agartha.client.module.impl.misc.m.class);
+            NameProtectModule var3 = ModuleManager.get(NameProtectModule.class);
             if (var3 != null && var3.isEnabled()) {
                return var3.censorScoreboardLine(text);
             }

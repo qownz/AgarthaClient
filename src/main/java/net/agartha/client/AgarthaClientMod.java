@@ -1,17 +1,29 @@
 package net.agartha.client;
 
-import net.agartha.client.c.e;
-import net.agartha.client.d.a_pkg.j;
-import net.agartha.client.e.ae;
-import net.agartha.client.e.ag;
-import net.agartha.client.e.ah;
-import net.agartha.client.e.au;
-import net.agartha.client.e.o;
-import net.agartha.client.e.t;
-import net.agartha.client.e.v;
-import net.agartha.client.e.x;
+import net.agartha.client.config.ConfigMigrator;
+import net.agartha.client.config.ModuleConfigManager;
+import net.agartha.client.event.EventBus;
+import net.agartha.client.event.impl.PacketReceiveNettyEvent;
+import net.agartha.client.gui.BellTexture;
+import net.agartha.client.gui.CanSpriteCache;
+import net.agartha.client.gui.ClawTexture;
+import net.agartha.client.gui.ClickGuiScreen;
+import net.agartha.client.gui.EffectIconCache;
+import net.agartha.client.gui.Hud;
+import net.agartha.client.gui.HudLayout;
+import net.agartha.client.gui.RingRenderer;
+import net.agartha.client.gui.UiSounds;
+import net.agartha.client.input.Keybind;
+import net.agartha.client.integration.spotify.SpotifyArtTexture;
+import net.agartha.client.macro.MacroManager;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.client.AgarthaModule;
-import net.agartha.client.util.d;
+import net.agartha.client.platform.PlatformSupport;
+import net.agartha.client.render.imgui.ImGuiManager;
+import net.agartha.client.util.net.ServerTicker;
+import net.agartha.client.util.time.TpsMeter;
+import net.agartha.client.util.world.BlockEntityTracker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -57,10 +69,10 @@ public final class AgarthaClientMod implements ClientModInitializer {
    private static final Object LEAK_TRACKER_OWNER = new Object();
 
    private static void toggleClickGui(MinecraftClient minecraftClient) {
-      if (minecraftClient.currentScreen instanceof x var1) {
+      if (minecraftClient.currentScreen instanceof ClickGuiScreen var1) {
          var1.requestClose();
       } else {
-         minecraftClient.setScreen(new x(minecraftClient.currentScreen));
+         minecraftClient.setScreen(new ClickGuiScreen(minecraftClient.currentScreen));
       }
    }
 
@@ -83,13 +95,13 @@ public final class AgarthaClientMod implements ClientModInitializer {
    }
 
    public void onInitializeClient() {
-      if (!b.isSupported()) {
+      if (!PlatformSupport.isSupported()) {
          LOGGER.error(
             "[Agartha] Unsupported platform: {}. Agartha is a Windows desktop client — its interface and input bridges have no build for this system, so nothing will load.",
-            b.describe()
+            PlatformSupport.describe()
          );
       } else {
-         net.agartha.client.c.b.run();
+         ConfigMigrator.run();
          LOGGER.info("[Agartha] Initialising");
          try {
             Registry.register(Registries.SOUND_EVENT, SPAWNER_NOTIFY_SOUND_ID, SPAWNER_NOTIFY_SOUND);
@@ -99,51 +111,51 @@ public final class AgarthaClientMod implements ClientModInitializer {
             LOGGER.debug("[Agartha] Sound registry already frozen; using sounds.json entries instead", var0);
          }
 
-         au.register();
-         net.agartha.client.f.a.getInstance().setHudRenderer(() -> {
-            if (!v.foreignMenuOpen()) {
-               v.getInstance().render();
-               ae.render();
+         UiSounds.register();
+         ImGuiManager.getInstance().setHudRenderer(() -> {
+            if (!Hud.foreignMenuOpen()) {
+               Hud.getInstance().render();
+               RingRenderer.render();
             }
-         }, () -> !v.foreignMenuOpen() && (v.getInstance().shouldRenderFrame() || ae.hasWork()));
+         }, () -> !Hud.foreignMenuOpen() && (Hud.getInstance().shouldRenderFrame() || RingRenderer.hasWork()));
          ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             public Identifier getFabricId() {
                return Identifier.of("agartha", "hud_logo");
             }
 
             public void reload(ResourceManager resourceManager) {
-               ah.getInstance().invalidate();
-               net.agartha.client.n.a_o.getInstance().invalidate();
-               ag.invalidateAll();
-               net.agartha.client.e.b.getInstance().invalidate();
-               o.invalidate();
+               BellTexture.getInstance().invalidate();
+               SpotifyArtTexture.getInstance().invalidate();
+               CanSpriteCache.invalidateAll();
+               ClawTexture.getInstance().invalidate();
+               EffectIconCache.invalidate();
             }
          });
-         net.agartha.client.util.v.install();
-         j.TYPE.listen(LEAK_TRACKER_OWNER, arg -> d.ingest(arg.packet));
+         TpsMeter.install();
+         PacketReceiveNettyEvent.TYPE.listen(LEAK_TRACKER_OWNER, arg -> BlockEntityTracker.ingest(arg.packet));
 
          ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)minecraftClient -> {
-            t.getInstance().save();
-            e.getInstance().save();
-            net.agartha.client.j.d.getInstance().save();
+            HudLayout.getInstance().save();
+            ModuleConfigManager.getInstance().save();
+            MacroManager.getInstance().save();
          });
          openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.agartha.open_gui", Type.KEYSYM, 344, KEY_CATEGORY));
-         e.getInstance().load();
+         ModuleConfigManager.getInstance().load();
 
-         for (net.agartha.client.module.b var2 : net.agartha.client.module.e.all()) {
-            net.agartha.client.d.d.INSTANCE.prepare(var2);
+         for (Module var2 : ModuleManager.all()) {
+            EventBus.INSTANCE.prepare(var2);
          }
 
          ClientTickEvents.END_CLIENT_TICK
             .register(
                (EndTick)minecraftClient -> {
-                  e.getInstance().applyPendingEnabled();
-                  net.agartha.client.util.b.tick(minecraftClient);
-                  AgarthaModule var2x = net.agartha.client.module.e.get(AgarthaModule.class);
+                  ModuleConfigManager.getInstance().applyPendingEnabled();
+                  ServerTicker.tick(minecraftClient);
+                  AgarthaModule var2x = ModuleManager.get(AgarthaModule.class);
                   int var3 = var2x == null ? 344 : var2x.clickGuiKey();
                   syncOpenGuiKey(var3);
                   boolean var4 = isMenuKeyDown(minecraftClient, var3);
-                  boolean var5 = minecraftClient.currentScreen instanceof x;
+                  boolean var5 = minecraftClient.currentScreen instanceof ClickGuiScreen;
                   if (minecraftClient.world != null && minecraftClient.currentScreen != null && !var5) {
                      openGuiKey.wasPressed();
                   } else if (openGuiKey.wasPressed() || var4 && !this.openGuiWasDown) {
@@ -154,12 +166,12 @@ public final class AgarthaClientMod implements ClientModInitializer {
                   if (!minecraftClient.isWindowFocused()) {
                      this.releaseHoldModulesOnFocusLoss();
                   } else if (minecraftClient.currentScreen == null) {
-                     for (net.agartha.client.module.b var7 : net.agartha.client.module.e.keyboundModules()) {
+                     for (Module var7 : ModuleManager.keyboundModules()) {
                         int var8 = var7.keybind();
                         if (var8 > 0
                            && var8 < this.keybindLastPressed.length
-                           && !net.agartha.client.j.e.isShiftKey(var8)
-                           && !net.agartha.client.j.e.isClickButton(var8)) {
+                           && !Keybind.isShiftKey(var8)
+                           && !Keybind.isClickButton(var8)) {
                            boolean var9 = var8 >= 1000
                               ? GLFW.glfwGetMouseButton(minecraftClient.getWindow().getHandle(), var8 - 1000) == 1
                               : InputUtil.isKeyPressed(minecraftClient.getWindow(), var8);
@@ -188,7 +200,7 @@ public final class AgarthaClientMod implements ClientModInitializer {
    }
 
    private void releaseHoldModulesOnFocusLoss() {
-      for (net.agartha.client.module.b var2 : net.agartha.client.module.e.keyboundModules()) {
+      for (Module var2 : ModuleManager.keyboundModules()) {
          if (var2.isHoldMode() && var2.isEnabled()) {
             int var3 = var2.keybind();
             if (var3 > 0 && var3 < this.keybindLastPressed.length) {

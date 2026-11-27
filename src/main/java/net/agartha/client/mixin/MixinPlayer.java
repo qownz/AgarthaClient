@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.l;
+import net.agartha.client.event.impl.PlayerAttackEntityEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.entity.Entity;
@@ -19,7 +19,7 @@ public abstract class MixinPlayer {
       cancellable = true
    )
    private void agartha$onAttack(Entity entity, CallbackInfo callbackInfo) {
-      if (l.dispatch(entity)) {
+      if (PlayerAttackEntityEvent.dispatch(entity)) {
          callbackInfo.cancel();
       }
    }

@@ -10,19 +10,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.p;
-import net.agartha.client.k.c;
-import net.agartha.client.module.b;
-import net.agartha.client.module.f;
-import net.agartha.client.module.a_pkg.i;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.DiggerColumns;
-import net.agartha.client.util.a_o;
-import net.agartha.client.util.ac;
-import net.agartha.client.util.ad;
-import net.agartha.client.util.l;
-import net.agartha.client.util.w;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.BlockUpdateEvent;
+import net.agartha.client.event.impl.EndClientTickEvent;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.ScanFrameEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.TracerOverlay;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.EnumSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.color.ColorSettingWiring;
+import net.agartha.client.util.perf.TimeSlice;
+import net.agartha.client.util.render.FadeTracker;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.render.LabelStacker;
+import net.agartha.client.util.render.OffscreenIndicator;
+import net.agartha.client.util.render.PlateRenderer;
+import net.agartha.client.util.world.DiggerColumns;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -42,7 +50,7 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.WorldChunk;
 
 @Environment(EnvType.CLIENT)
-public final class DiggerEspModule extends b implements f {
+public final class DiggerEspModule extends Module implements TracerOverlay {
    private static final int MIN_CHUNK = 4;
    private static final int MAX_CHUNK = 10;
    private static final long SLICE_NS = 1500000L;
@@ -60,7 +68,7 @@ public final class DiggerEspModule extends b implements f {
    private static final double PLATE_HALF = 4.0;
    private static final int SAME_FIND = 2;
    private final Map<Long, List<DiggerEspModule.Column>> found = new HashMap<>();
-   private final c slice = new c();
+   private final TimeSlice slice = new TimeSlice();
    private final Set<Long> done = new HashSet<>();
    private final ArrayDeque<Long> queue = new ArrayDeque<>();
    private final Set<Long> queued = new HashSet<>();
@@ -83,19 +91,19 @@ public final class DiggerEspModule extends b implements f {
    private boolean reviewHit;
    private ClientWorld lastLevel;
    private final Set<Long> nearSeed = new HashSet<>();
-   private final i sSensitivity = (i)this.addSetting(new i("Sensitivity", "Low", new String[]{"Low", "High", "Ultra High"}));
-   private final net.agartha.client.module.a_pkg.b sCustomColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", true)
+   private final EnumSetting sSensitivity = (EnumSetting)this.addSetting(new EnumSetting("Sensitivity", "Low", new String[]{"Low", "High", "Ultra High"}));
+   private final BooleanSetting sCustomColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", true)
    );
-   private final net.agartha.client.module.a_pkg.c sColor = (net.agartha.client.module.a_pkg.c)this.addSetting(new net.agartha.client.module.a_pkg.c("Color", -8397825));
-   private final net.agartha.client.module.a_pkg.b sThemeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", false)
+   private final ColorSetting sColor = (ColorSetting)this.addSetting(new ColorSetting("Color", -8397825));
+   private final BooleanSetting sThemeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", false)
    );
-   private final j sPlateY = (j)this.addSetting(new j("Plate Y", 60.0F, -64.0F, 320.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sTracers = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Tracers", false));
-   private final a_o fade = new a_o(0.7F, 0.5F);
+   private final NumberSetting sPlateY = (NumberSetting)this.addSetting(new NumberSetting("Plate Y", 60.0F, -64.0F, 320.0F).whole());
+   private final BooleanSetting sTracers = (BooleanSetting)this.addSetting(new BooleanSetting("Tracers", false));
+   private final FadeTracker fade = new FadeTracker(0.7F, 0.5F);
    private final Long2ObjectOpenHashMap<DiggerEspModule.Column> lastColumns = new Long2ObjectOpenHashMap();
-   private final net.agartha.client.util.a_o.a fadingPlate = this::drawPlate;
+   private final FadeTracker.a fadingPlate = this::drawPlate;
    private int frameColor;
    private int frameFill;
    private int pruneFrames;
@@ -106,15 +114,15 @@ public final class DiggerEspModule extends b implements f {
    private float tracerOriginX;
    private float tracerOriginY;
    private int tracerColor;
-   private final net.agartha.client.util.a_o.a plateTracer = this::tracerTo;
+   private final FadeTracker.a plateTracer = this::tracerTo;
 
    public DiggerEspModule() {
       super(
          "Agartha Finder",
          "Shows up less often than Sus Chunk Finder, but the marks are more reliable. Dig under the plate.",
-         net.agartha.client.module.c.DONUT
+         ModuleCategory.DONUT
       );
-      ac.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, false);
+      ColorSettingWiring.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, false);
       this.sSensitivity.onChange(this::clear);
    }
 
@@ -146,8 +154,8 @@ public final class DiggerEspModule extends b implements f {
       this.lastLevel = null;
    }
 
-   @net.agartha.client.d.f
-   public void onPacketReceive(net.agartha.client.d.a_pkg.i arg) {
+   @EventListener
+   public void onPacketReceive(PacketReceiveEvent arg) {
       if (arg.packet instanceof ChunkDataS2CPacket var2) {
          this.enqueue(ChunkPos.toLong(var2.getChunkX(), var2.getChunkZ()));
          if (!this.deferred.isEmpty()) {
@@ -163,8 +171,8 @@ public final class DiggerEspModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onBlockUpdate(net.agartha.client.d.a_pkg.a arg) {
+   @EventListener
+   public void onBlockUpdate(BlockUpdateEvent arg) {
       if (arg.pos != null) {
          if (affectsScan(arg.oldState, arg.newState)) {
             this.enqueue(ChunkPos.toLong(arg.pos.getX() >> 4, arg.pos.getZ() >> 4));
@@ -184,8 +192,8 @@ public final class DiggerEspModule extends b implements f {
       return isStone(blockState) || isWallState(blockState);
    }
 
-   @net.agartha.client.d.f
-   public void onEndClientTick(net.agartha.client.d.a_pkg.c arg) {
+   @EventListener
+   public void onEndClientTick(EndClientTickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null && var3.getRegistryKey() == World.OVERWORLD) {
@@ -202,8 +210,8 @@ public final class DiggerEspModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onScanFrame(p arg) {
+   @EventListener
+   public void onScanFrame(ScanFrameEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null && var3 == this.lastLevel && var3.getRegistryKey() == World.OVERWORLD) {
@@ -262,8 +270,8 @@ public final class DiggerEspModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.player != null && (!this.found.isEmpty() || !this.lastColumns.isEmpty())) {
          this.frameColor = this.color();
@@ -275,7 +283,7 @@ public final class DiggerEspModule extends b implements f {
          for (Entry var6 : this.found.entrySet()) {
             long var7 = (Long)var6.getKey();
             if (chunkDist(var7, var3) <= var4) {
-               boolean var9 = !l.columnOutOfView(ChunkPos.getPackedX(var7), ChunkPos.getPackedZ(var7), -64, 320);
+               boolean var9 = !FrustumCulling.columnOutOfView(ChunkPos.getPackedX(var7), ChunkPos.getPackedZ(var7), -64, 320);
 
                for (DiggerEspModule.Column var11 : (Iterable<DiggerEspModule.Column>) (List)var6.getValue()) {
                   long var12 = columnKey(var11);
@@ -305,8 +313,8 @@ public final class DiggerEspModule extends b implements f {
          if (var4 != null) {
             int var5 = f >= 0.999F ? this.frameColor : scaleAlpha(this.frameColor, f);
             int var6 = f >= 0.999F ? this.frameFill : scaleAlpha(this.frameFill, f);
-            double var7 = a_o.pop(f);
-            double var9 = a_o.rise(f);
+            double var7 = FadeTracker.pop(f);
+            double var9 = FadeTracker.rise(f);
             Box var11 = this.plate(var4);
             if (var7 < 0.999) {
                var11 = var11.expand(var11.getLengthX() * (var7 - 1.0) * 0.5, 0.0, var11.getLengthZ() * (var7 - 1.0) * 0.5);
@@ -316,8 +324,8 @@ public final class DiggerEspModule extends b implements f {
                var11 = var11.offset(0.0, var9, 0.0);
             }
 
-            if (net.agartha.client.util.l.isSafeCuboid(var11)) {
-               w.plate(4, var11, var5, 1.5F, var6);
+            if (FrustumCulling.isSafeCuboid(var11)) {
+               PlateRenderer.plate(4, var11, var5, 1.5F, var6);
             }
          }
       }
@@ -340,8 +348,8 @@ public final class DiggerEspModule extends b implements f {
             this.tracerMc = var4;
             this.tracerW = f;
             this.tracerH = g;
-            this.tracerOriginX = ad.originX(f);
-            this.tracerOriginY = ad.originY("Crosshair", g);
+            this.tracerOriginX = OffscreenIndicator.originX(f);
+            this.tracerOriginY = OffscreenIndicator.originY("Crosshair", g);
             this.tracerColor = this.color();
             this.fade.forEachVisible(this.plateTracer);
             this.tracerList = null;
@@ -354,8 +362,8 @@ public final class DiggerEspModule extends b implements f {
       if (var4 != null) {
          double var5 = var4.x + 0.5;
          double var7 = var4.z + 0.5;
-         double var9 = net.agartha.client.util.o.y(4, l, var5 - 4.0, this.sPlateY.get(), var7 - 4.0, var5 + 4.0, var7 + 4.0, 0.35) + a_o.rise(f);
-         ad.draw(
+         double var9 = LabelStacker.y(4, l, var5 - 4.0, this.sPlateY.get(), var7 - 4.0, var5 + 4.0, var7 + 4.0, 0.35) + FadeTracker.rise(f);
+         OffscreenIndicator.draw(
             this.tracerList,
             this.tracerMc,
             this.tracerW,
@@ -370,7 +378,7 @@ public final class DiggerEspModule extends b implements f {
    }
 
    private int color() {
-      return ac.argb(this.sThemeColor, this.sCustomColor, this.sColor, -8397825);
+      return ColorSettingWiring.argb(this.sThemeColor, this.sCustomColor, this.sColor, -8397825);
    }
 
    private static long columnKey(DiggerEspModule.Column column) {
@@ -380,7 +388,7 @@ public final class DiggerEspModule extends b implements f {
    private Box plate(DiggerEspModule.Column column) {
       double var2 = column.x + 0.5;
       double var4 = column.z + 0.5;
-      double var6 = net.agartha.client.util.o.y(4, columnKey(column), var2 - 4.0, this.sPlateY.get(), var4 - 4.0, var2 + 4.0, var4 + 4.0, 0.35);
+      double var6 = LabelStacker.y(4, columnKey(column), var2 - 4.0, this.sPlateY.get(), var4 - 4.0, var2 + 4.0, var4 + 4.0, 0.35);
       return new Box(var2 - 4.0, var6, var4 - 4.0, var2 + 4.0, var6 + 0.35, var4 + 4.0);
    }
 

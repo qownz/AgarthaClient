@@ -3,9 +3,11 @@ package net.agartha.client.module.impl.misc;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Locale;
-import net.agartha.client.d.f;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.ChatSendEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -16,21 +18,21 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 @Environment(EnvType.CLIENT)
-public final class FakePayModule extends b {
+public final class FakePayModule extends Module {
    private static final String COMMAND = "/pay";
    private static final String[] SUFFIXES = new String[]{"", "K", "M", "B", "T"};
    private static final BigDecimal THOUSAND = BigDecimal.valueOf(1000L);
    private static final BigDecimal MAX_AMOUNT = new BigDecimal("999999999999999");
-   private final net.agartha.client.module.a_pkg.b showUsage = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Usage Hints", true)
+   private final BooleanSetting showUsage = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Usage Hints", true)
    );
 
    public FakePayModule() {
-      super("Fake Pay", "Blocks every /pay and fakes the payment message in your own chat.", c.DONUT);
+      super("Fake Pay", "Blocks every /pay and fakes the payment message in your own chat.", ModuleCategory.DONUT);
    }
 
-   @f
-   public void onChatSend(net.agartha.client.d.a_pkg.b arg) {
+   @EventListener
+   public void onChatSend(ChatSendEvent arg) {
       if (this.isEnabled()) {
          String var2 = arg.message;
          if (var2 != null) {

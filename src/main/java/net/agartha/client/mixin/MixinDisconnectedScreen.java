@@ -1,8 +1,8 @@
 package net.agartha.client.mixin;
 
 import net.agartha.client.compat.AgarthaDisconnectTick;
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.d;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.AutoReconnectModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -42,7 +42,7 @@ public abstract class MixinDisconnectedScreen implements AgarthaDisconnectTick {
       )}
    )
    private void agartha$addReconnectButtons(CallbackInfo callbackInfo) {
-      d var2 = e.get(d.class);
+      AutoReconnectModule var2 = ModuleManager.get(AutoReconnectModule.class);
       if (var2 != null && var2.lastServerConnection() != null && !var2.hideButtons()) {
          this.agartha$reconnectButton = new Builder(Text.literal(this.agartha$getReconnectText()), buttonWidget -> this.agartha$tryConnecting()).build();
          this.grid.add(this.agartha$reconnectButton);
@@ -56,7 +56,7 @@ public abstract class MixinDisconnectedScreen implements AgarthaDisconnectTick {
 
    @Override
    public void agartha$tickReconnect() {
-      d var1 = e.get(d.class);
+      AutoReconnectModule var1 = ModuleManager.get(AutoReconnectModule.class);
       if (var1 != null && var1.lastServerConnection() != null) {
          if (var1.hasRelogReconnect()) {
             if (this.agartha$reconnectButton != null) {
@@ -78,13 +78,13 @@ public abstract class MixinDisconnectedScreen implements AgarthaDisconnectTick {
 
    @Unique
    private static double initialDelayTicks() {
-      d var0 = e.get(d.class);
+      AutoReconnectModule var0 = ModuleManager.get(AutoReconnectModule.class);
       return var0 != null ? var0.delay() * 20.0F : 0.0;
    }
 
    @Unique
    private String agartha$getReconnectText() {
-      d var1 = e.get(d.class);
+      AutoReconnectModule var1 = ModuleManager.get(AutoReconnectModule.class);
       if (var1 == null) {
          return "Reconnect";
       } else {
@@ -102,9 +102,9 @@ public abstract class MixinDisconnectedScreen implements AgarthaDisconnectTick {
 
    @Unique
    private void agartha$tryConnecting() {
-      d var1 = e.get(d.class);
+      AutoReconnectModule var1 = ModuleManager.get(AutoReconnectModule.class);
       if (var1 != null && var1.lastServerConnection() != null) {
-         d.a var2 = var1.lastServerConnection();
+         AutoReconnectModule.a var2 = var1.lastServerConnection();
          ConnectScreen.connect(new TitleScreen(), MinecraftClient.getInstance(), var2.address(), var2.info(), false, null);
       }
    }

@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.Frustum;
@@ -23,7 +23,7 @@ public abstract class MixinNoRenderEntityRenderer<T extends Entity> {
       cancellable = true
    )
    private void agartha$noEntity(T entity, Frustum frustum, double d, double e, double f, CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
-      net.agartha.client.module.impl.render.m var10 = net.agartha.client.module.e.get(net.agartha.client.module.impl.render.m.class);
+      NoRenderModule var10 = ModuleManager.get(NoRenderModule.class);
       if (var10 != null) {
          if (var10.noFallingBlocks() && entity instanceof FallingBlockEntity) {
             callbackInfoReturnable.setReturnValue(false);
@@ -41,7 +41,7 @@ public abstract class MixinNoRenderEntityRenderer<T extends Entity> {
       cancellable = true
    )
    private void agartha$noNametags(T entity, double d, CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
-      net.agartha.client.module.impl.render.m var5 = net.agartha.client.module.e.get(net.agartha.client.module.impl.render.m.class);
+      NoRenderModule var5 = ModuleManager.get(NoRenderModule.class);
       if (var5 != null && var5.noNametags()) {
          callbackInfoReturnable.setReturnValue(false);
       }

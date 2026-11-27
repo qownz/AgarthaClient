@@ -1,28 +1,30 @@
 package net.agartha.client.module.impl.client;
 
-import net.agartha.client.module.b;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.ac;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.color.ColorSettingWiring;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public final class CrosshairModule extends b {
+public final class CrosshairModule extends Module {
    private static final float VANILLA_SPRITE_SIZE = 15.0F;
    private static final int DEFAULT_TINT = -1;
-   private final j size = (j)this.addSetting(new j("Size", 0.65F, 0.25F, 2.0F));
-   private final net.agartha.client.module.a_pkg.b customColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", true)
+   private final NumberSetting size = (NumberSetting)this.addSetting(new NumberSetting("Size", 0.65F, 0.25F, 2.0F));
+   private final BooleanSetting customColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", true)
    );
-   private final net.agartha.client.module.a_pkg.b themeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", false)
+   private final BooleanSetting themeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", false)
    );
-   private final c color = (c)this.addSetting(new c("Color", -1));
+   private final ColorSetting color = (ColorSetting)this.addSetting(new ColorSetting("Color", -1));
 
    public CrosshairModule() {
-      super("Crosshair", "Resize and recolor the HUD crosshair.", net.agartha.client.module.c.CLIENT);
-      ac.wireExclusiveColorSource(this.customColor, this.themeColor, this.color);
+      super("Crosshair", "Resize and recolor the HUD crosshair.", ModuleCategory.CLIENT);
+      ColorSettingWiring.wireExclusiveColorSource(this.customColor, this.themeColor, this.color);
    }
 
    public float scale() {
@@ -34,6 +36,6 @@ public final class CrosshairModule extends b {
    }
 
    public int tintArgb() {
-      return ac.argb(this.themeColor, this.customColor, this.color, -1);
+      return ColorSettingWiring.argb(this.themeColor, this.customColor, this.color, -1);
    }
 }

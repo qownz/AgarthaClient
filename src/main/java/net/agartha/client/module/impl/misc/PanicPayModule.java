@@ -7,14 +7,15 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.aj;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.l;
-import net.agartha.client.util.ab;
-import net.agartha.client.util.m;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationManager;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.StringSetting;
+import net.agartha.client.util.net.ChatBus;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.net.MoneyCommandGuard;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -28,7 +29,7 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.PlayerListEntry;
 
 @Environment(EnvType.CLIENT)
-public final class PanicPayModule extends b {
+public final class PanicPayModule extends Module {
    private static final Pattern VALID_NAME = Pattern.compile("\\.?[A-Za-z0-9_]{3,16}");
    private static final Pattern RATE_LIMIT = Pattern.compile("wait (?:another )?([\\d.]+) seconds?");
    private static final Pattern MONEY = Pattern.compile("\\$\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*([kmbt])?(?![a-z])");
@@ -38,7 +39,7 @@ public final class PanicPayModule extends b {
    private static final int MAX_TRIES = 3;
    private static final int MAX_LOWERS = 4;
    private static final long RUN_LIMIT_MS = 45000L;
-   private final l sPayTo = (l)this.addSetting(new l("Player", "", 17));
+   private final StringSetting sPayTo = (StringSetting)this.addSetting(new StringSetting("Player", "", 17));
    private final Consumer<String> chatListener = this::onChat;
    private PanicPayModule.Step step;
    private String target;
@@ -59,7 +60,7 @@ public final class PanicPayModule extends b {
    private volatile String balanceSuffix;
 
    public PanicPayModule() {
-      super("Panic Pay", "Sends all your money to the player you type in.", c.DONUT);
+      super("Panic Pay", "Sends all your money to the player you type in.", ModuleCategory.DONUT);
       this.sPayTo.sessionOnly();
    }
 
@@ -99,14 +100,14 @@ public final class PanicPayModule extends b {
          this.pressedDialog = null;
          this.startedAt = System.currentTimeMillis();
          this.holdUntil = this.paidAt = this.poorAt = this.errorAt = this.balanceAt = 0L;
-         m.addListener(this.chatListener);
-         ab.send("Panic Pay", "Sending your whole balance to " + this.target + ". Turn Panic Pay off to stop.");
+         ChatBus.addListener(this.chatListener);
+         ChatSender.send("Panic Pay", "Sending your whole balance to " + this.target + ". Turn Panic Pay off to stop.");
          this.step = PanicPayModule.Step.BALANCE;
       }
    }
 
    protected void onDisable() {
-      m.removeListener(this.chatListener);
+      ChatBus.removeListener(this.chatListener);
       this.step = null;
    }
 
@@ -117,7 +118,7 @@ public final class PanicPayModule extends b {
    }
 
    private static void alert(String string) {
-      aj.getInstance().pushAlert("Panic Pay: " + string);
+      NotificationManager.getInstance().pushAlert("Panic Pay: " + string);
       AgarthaClientMod.LOGGER.warn("[Panic Pay] {}", string);
    }
 
@@ -160,8 +161,8 @@ public final class PanicPayModule extends b {
       }
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       if (this.step != null) {
          MinecraftClient var2 = MinecraftClient.getInstance();
          ClientPlayerEntity var3 = var2.player;
@@ -196,7 +197,7 @@ public final class PanicPayModule extends b {
          if (this.sentAt != 0L && ++this.tries >= 3) {
             this.finish("/bal gave no balance, nothing was sent.");
          } else if (l >= Math.max(this.holdUntil, this.lastCommandAt + 1000L)) {
-            if (!net.agartha.client.util.f.allowAutomated("/bal", "Panic Pay")) {
+            if (!MoneyCommandGuard.allowAutomated("/bal", "Panic Pay")) {
                this.finish("/bal was blocked.");
             } else {
                clientPlayerEntity.networkHandler.sendChatCommand("bal");
@@ -210,7 +211,7 @@ public final class PanicPayModule extends b {
    private void pay(MinecraftClient minecraftClient, ClientPlayerEntity clientPlayerEntity, long l) {
       if (this.sentAt != 0L) {
          if (this.paidAt >= this.sentAt) {
-            ab.send("Panic Pay", "Sent $" + this.amount + " to " + this.target + ".");
+            ChatSender.send("Panic Pay", "Sent $" + this.amount + " to " + this.target + ".");
             this.step = null;
             this.setEnabled(false);
          } else if (this.poorAt >= this.sentAt) {

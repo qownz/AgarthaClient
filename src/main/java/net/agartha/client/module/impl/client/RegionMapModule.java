@@ -1,40 +1,42 @@
 package net.agartha.client.module.impl.client;
 
-import net.agartha.client.module.b;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public final class RegionMapModule extends b {
-   private final j cellSize = (j)this.addSetting(new j("Cell Size", 22.0F, 10.0F, 50.0F));
-   private final j cellGap = (j)this.addSetting(new j("Cell Gap", 2.0F, 0.0F, 10.0F));
-   private final j textScale = (j)this.addSetting(new j("Text Scale", 1.0F, 0.1F, 2.0F));
-   private final j opacity = (j)this.addSetting(new j("Opacity", 1.0F, 0.1F, 1.0F));
-   private final net.agartha.client.module.a_pkg.b showRegionIds = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Region IDs", true)
+public final class RegionMapModule extends Module {
+   private final NumberSetting cellSize = (NumberSetting)this.addSetting(new NumberSetting("Cell Size", 22.0F, 10.0F, 50.0F));
+   private final NumberSetting cellGap = (NumberSetting)this.addSetting(new NumberSetting("Cell Gap", 2.0F, 0.0F, 10.0F));
+   private final NumberSetting textScale = (NumberSetting)this.addSetting(new NumberSetting("Text Scale", 1.0F, 0.1F, 2.0F));
+   private final NumberSetting opacity = (NumberSetting)this.addSetting(new NumberSetting("Opacity", 1.0F, 0.1F, 1.0F));
+   private final BooleanSetting showRegionIds = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Region IDs", true)
    );
-   private final net.agartha.client.module.a_pkg.b showPlayer = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Player Icon", true)
+   private final BooleanSetting showPlayer = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Player Icon", true)
    );
-   private final net.agartha.client.module.a_pkg.b showCoords = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Coordinates", true)
+   private final BooleanSetting showCoords = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Coordinates", true)
    );
-   private final net.agartha.client.module.a_pkg.b showNether = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Nether Coordinates", true)
+   private final BooleanSetting showNether = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Nether Coordinates", true)
    );
-   private final net.agartha.client.module.a_pkg.b showRegionInfo = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Region Info", true)
+   private final BooleanSetting showRegionInfo = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Region Info", true)
    );
-   private final j playerScale = (j)this.addSetting(new j("Player Scale", 1.0F, 0.5F, 3.0F));
-   private final net.agartha.client.module.a_pkg.b customPlayerColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Player Color", false)
+   private final NumberSetting playerScale = (NumberSetting)this.addSetting(new NumberSetting("Player Scale", 1.0F, 0.5F, 3.0F));
+   private final BooleanSetting customPlayerColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Player Color", false)
    );
-   private final c playerIndicatorColor = (c)this.addSetting(new c("Player Indicator", -52686));
+   private final ColorSetting playerIndicatorColor = (ColorSetting)this.addSetting(new ColorSetting("Player Indicator", -52686));
 
    public RegionMapModule() {
-      super("Region Map", "DonutSMP region map with directional indicator.", net.agartha.client.module.c.CLIENT);
+      super("Region Map", "DonutSMP region map with directional indicator.", ModuleCategory.CLIENT);
       this.showRegionIds.visibleWhen(() -> false);
       this.showPlayer.visibleWhen(() -> false);
       this.showCoords.visibleWhen(() -> false);
@@ -49,23 +51,23 @@ public final class RegionMapModule extends b {
       return !this.showCoords.get() && !this.showNether.get() && !this.showRegionInfo.get();
    }
 
-   public net.agartha.client.module.a_pkg.b showRegionIdsSetting() {
+   public BooleanSetting showRegionIdsSetting() {
       return this.showRegionIds;
    }
 
-   public net.agartha.client.module.a_pkg.b showPlayerSetting() {
+   public BooleanSetting showPlayerSetting() {
       return this.showPlayer;
    }
 
-   public net.agartha.client.module.a_pkg.b showCoordsSetting() {
+   public BooleanSetting showCoordsSetting() {
       return this.showCoords;
    }
 
-   public net.agartha.client.module.a_pkg.b showNetherSetting() {
+   public BooleanSetting showNetherSetting() {
       return this.showNether;
    }
 
-   public net.agartha.client.module.a_pkg.b showRegionInfoSetting() {
+   public BooleanSetting showRegionInfoSetting() {
       return this.showRegionInfo;
    }
 
@@ -85,15 +87,15 @@ public final class RegionMapModule extends b {
       return this.showRegionInfo.get();
    }
 
-   public j cellSizeSetting() {
+   public NumberSetting cellSizeSetting() {
       return this.cellSize;
    }
 
-   public j cellGapSetting() {
+   public NumberSetting cellGapSetting() {
       return this.cellGap;
    }
 
-   public j textScaleSetting() {
+   public NumberSetting textScaleSetting() {
       return this.textScale;
    }
 
@@ -121,7 +123,7 @@ public final class RegionMapModule extends b {
       return this.showRegionIds.get();
    }
 
-   public c playerIndicatorColor() {
+   public ColorSetting playerIndicatorColor() {
       return this.playerIndicatorColor;
    }
 

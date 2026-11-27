@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.p;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SmoothHotbarModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -31,7 +31,7 @@ public abstract class MixinGuiSmoothHotbar {
       require = 0
    )
    private int agartha$smoothSelectionX(int i) {
-      p var2 = e.get(p.class);
+      SmoothHotbarModule var2 = ModuleManager.get(SmoothHotbarModule.class);
       if (var2 != null && var2.isEnabled()) {
          ClientPlayerEntity var3 = MinecraftClient.getInstance().player;
          if (var3 == null) {

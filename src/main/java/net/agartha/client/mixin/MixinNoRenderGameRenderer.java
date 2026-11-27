@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.GameRenderer;
@@ -21,7 +21,7 @@ public abstract class MixinNoRenderGameRenderer {
       cancellable = true
    )
    private void agartha$noTotem(ItemStack itemStack, CallbackInfo callbackInfo) {
-      m var3 = e.get(m.class);
+      NoRenderModule var3 = ModuleManager.get(NoRenderModule.class);
       if (var3 != null && var3.noTotemAnimation() && itemStack.isOf(Items.TOTEM_OF_UNDYING)) {
          callbackInfo.cancel();
       }

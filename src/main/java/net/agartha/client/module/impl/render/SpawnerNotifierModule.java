@@ -9,19 +9,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.function.LongPredicate;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.i;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.p;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.aj;
-import net.agartha.client.k.c;
-import net.agartha.client.l.d;
-import net.agartha.client.module.b;
-import net.agartha.client.util.a_o;
-import net.agartha.client.util.ab;
-import net.agartha.client.util.ac;
-import net.agartha.client.util.l;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.BlockUpdateEvent;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.ScanFrameEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationManager;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.render.effect.GizmoCanvas;
+import net.agartha.client.render.effect.LightningEffect;
+import net.agartha.client.util.color.ColorSettingWiring;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.perf.Profiler;
+import net.agartha.client.util.perf.TickBudget;
+import net.agartha.client.util.perf.TimeSlice;
+import net.agartha.client.util.render.FadeTracker;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.world.BlockEntityTracker;
+import net.agartha.client.util.world.ChunkScanCache;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
@@ -37,11 +46,11 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
 
 @Environment(EnvType.CLIENT)
-public final class SpawnerNotifierModule extends b {
+public final class SpawnerNotifierModule extends Module {
    private static final int SCAN_INTERVAL_TICKS = 1;
    private static final float LINE_WIDTH = 1.5F;
    private static final int MAX_CHUNKS_PER_TICK = 48;
-   private final net.agartha.client.util.a_pkg.b<SpawnerNotifierModule.SpawnerEntry> scan = new net.agartha.client.util.a_pkg.b();
+   private final ChunkScanCache<SpawnerNotifierModule.SpawnerEntry> scan = new ChunkScanCache();
    private final Set<Long> notifiedPositions = new HashSet<>();
    private final ArrayDeque<Long> pending = new ArrayDeque<>();
    private final Set<Long> pendingKeys = new HashSet<>();
@@ -49,25 +58,25 @@ public final class SpawnerNotifierModule extends b {
    private int tickCounter = 0;
    private int pruneTimer = 0;
    private int sweepIndex;
-   private final c scanSlice = new c();
-   private final net.agartha.client.module.a_pkg.b sChatNotify = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Chat Notify", true)
+   private final TimeSlice scanSlice = new TimeSlice();
+   private final BooleanSetting sChatNotify = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Chat Notify", true)
    );
-   private final net.agartha.client.module.a_pkg.b sRender = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Render", true));
-   private final net.agartha.client.module.a_pkg.b sCustomColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", true)
+   private final BooleanSetting sRender = (BooleanSetting)this.addSetting(new BooleanSetting("Render", true));
+   private final BooleanSetting sCustomColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", true)
    );
-   private final net.agartha.client.module.a_pkg.c sColor = (net.agartha.client.module.a_pkg.c)this.addSetting(new net.agartha.client.module.a_pkg.c("Color", -43691));
-   private final net.agartha.client.module.a_pkg.b sThemeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", false)
+   private final ColorSetting sColor = (ColorSetting)this.addSetting(new ColorSetting("Color", -43691));
+   private final BooleanSetting sThemeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", false)
    );
-   private final net.agartha.client.module.a_pkg.b sBeam = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Light Beam", true));
-   private final net.agartha.client.module.a_pkg.b sLightning = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Lightning", true));
-   private final d canvas = new d();
-   private final net.agartha.client.l.c fx = new net.agartha.client.l.c();
-   private final a_o fade = new a_o(0.6F, 0.4F);
+   private final BooleanSetting sBeam = (BooleanSetting)this.addSetting(new BooleanSetting("Light Beam", true));
+   private final BooleanSetting sLightning = (BooleanSetting)this.addSetting(new BooleanSetting("Lightning", true));
+   private final GizmoCanvas canvas = new GizmoCanvas();
+   private final LightningEffect fx = new LightningEffect();
+   private final FadeTracker fade = new FadeTracker(0.6F, 0.4F);
    private final LongPredicate stillShown = this.fade::contains;
-   private final net.agartha.client.util.a_o.a fadingMark = this::drawMark;
+   private final FadeTracker.a fadingMark = this::drawMark;
    private int frameColor;
    private double frameTime;
    private double frameTop;
@@ -76,8 +85,8 @@ public final class SpawnerNotifierModule extends b {
    private int fxLeft;
 
    public SpawnerNotifierModule() {
-      super("Spawner Notifier", "Finds mob spawners and marks them with a light beam and lightning.", net.agartha.client.module.c.DONUT);
-      ac.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor);
+      super("Spawner Notifier", "Finds mob spawners and marks them with a light beam and lightning.", ModuleCategory.DONUT);
+      ColorSettingWiring.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor);
    }
 
    protected void onEnable() {
@@ -101,8 +110,8 @@ public final class SpawnerNotifierModule extends b {
       this.pruneTimer = 0;
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          if (++this.tickCounter >= 1) {
@@ -137,8 +146,8 @@ public final class SpawnerNotifierModule extends b {
       }
    }
 
-   @f
-   public void onPacketReceive(i arg) {
+   @EventListener
+   public void onPacketReceive(PacketReceiveEvent arg) {
       if (arg.packet instanceof ChunkDataS2CPacket var2) {
          this.enqueue(ChunkPos.toLong(var2.getChunkX(), var2.getChunkZ()));
       } else if (arg.packet instanceof BlockEntityUpdateS2CPacket var3) {
@@ -152,11 +161,11 @@ public final class SpawnerNotifierModule extends b {
       }
    }
 
-   @f
-   public void onScanFrame(p arg) {
+   @EventListener
+   public void onScanFrame(ScanFrameEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
-         if (this.scanSlice.begin(net.agartha.client.k.a.sliceNs(1), 48)) {
+         if (this.scanSlice.begin(TickBudget.sliceNs(1), 48)) {
             try {
                this.scanFrame(var2, this.scanSlice.deadline());
             } finally {
@@ -170,7 +179,7 @@ public final class SpawnerNotifierModule extends b {
       ClientWorld var4 = minecraftClient.world;
       ChunkPos var5 = minecraftClient.player.getChunkPos();
       int var6 = Math.max(2, minecraftClient.options.getClampedViewDistance());
-      long var7 = net.agartha.client.k.b_o.begin();
+      long var7 = Profiler.begin();
       long var9 = l - (l - System.nanoTime()) / 2L;
       int var11 = 0;
 
@@ -187,8 +196,8 @@ public final class SpawnerNotifierModule extends b {
       }
 
       var11 += this.sweepSpawners(minecraftClient, var4, var5.x, var5.z, var6, l);
-      net.agartha.client.k.b_o.record("scanner.spawner", var7);
-      net.agartha.client.k.b_o.recordCount("scanner.spawner.chunks", var11);
+      Profiler.record("scanner.spawner", var7);
+      Profiler.recordCount("scanner.spawner.chunks", var11);
    }
 
    private void enqueue(long l) {
@@ -197,8 +206,8 @@ public final class SpawnerNotifierModule extends b {
       }
    }
 
-   @f
-   public void onBlockUpdate(net.agartha.client.d.a_pkg.a arg) {
+   @EventListener
+   public void onBlockUpdate(BlockUpdateEvent arg) {
       BlockPos var2 = arg.pos;
       if (var2 != null) {
          boolean var3 = arg.oldState != null && arg.oldState.isOf(Blocks.SPAWNER);
@@ -206,7 +215,7 @@ public final class SpawnerNotifierModule extends b {
          boolean var5 = arg.newState == null || arg.newState.isAir();
          if (var3 || var4 || var5) {
             if (!var4) {
-               net.agartha.client.util.d.forget(var2);
+               BlockEntityTracker.forget(var2);
                this.fade.drop(var2.asLong());
             }
 
@@ -323,11 +332,11 @@ public final class SpawnerNotifierModule extends b {
       }
    }
 
-   @f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (this.sRender.value().get() && var2.world != null) {
-         this.frameColor = ac.argb(this.sThemeColor, this.sCustomColor, this.sColor, -43691);
+         this.frameColor = ColorSettingWiring.argb(this.sThemeColor, this.sCustomColor, this.sColor, -43691);
          this.frameTime = System.nanoTime() % 3600000000000L / 1.0E9;
          this.frameTop = var2.world.getTopYInclusive() + 1.0;
          this.fade.begin();
@@ -342,7 +351,7 @@ public final class SpawnerNotifierModule extends b {
                   for (SpawnerNotifierModule.SpawnerEntry var10 : (Iterable<SpawnerNotifierModule.SpawnerEntry>) var8) {
                      long var11 = var10.pos().asLong();
                      float var13 = this.fade.show(var11);
-                     if (!l.columnOutOfView(var6, var7, -64, 320)) {
+                     if (!FrustumCulling.columnOutOfView(var6, var7, -64, 320)) {
                         this.drawMark(var11, var13);
                      }
                   }
@@ -361,8 +370,8 @@ public final class SpawnerNotifierModule extends b {
          int var4 = BlockPos.unpackLongX(l);
          int var5 = BlockPos.unpackLongY(l);
          int var6 = BlockPos.unpackLongZ(l);
-         double var7 = 0.5 * (1.0 - a_o.pop(f));
-         net.agartha.client.l.c.selection(
+         double var7 = 0.5 * (1.0 - FadeTracker.pop(f));
+         LightningEffect.selection(
             this.canvas, var4 + var7, var5 + var7, var6 + var7, var4 + 1.0 - var7, var5 + 1.0 - var7, var6 + 1.0 - var7, this.frameColor, f, this.frameTime
          );
          if (this.fxLeft > 0 && this.canvas.distanceSqr(var4 + 0.5, var5 + 0.5, var6 + 0.5) < 25600.0) {
@@ -410,8 +419,8 @@ public final class SpawnerNotifierModule extends b {
          }
       }
 
-      for (Entry var8 : net.agartha.client.util.d.inChunk(l).entrySet()) {
-         if (((net.agartha.client.util.d.a)var8.getValue()).block().equals(Blocks.SPAWNER)) {
+      for (Entry var8 : BlockEntityTracker.inChunk(l).entrySet()) {
+         if (((BlockEntityTracker.a)var8.getValue()).block().equals(Blocks.SPAWNER)) {
             var3 = var3 * 31L + ((BlockPos)var8.getKey()).asLong();
             if (var3 == 0L) {
                var3 = 1L;
@@ -436,8 +445,8 @@ public final class SpawnerNotifierModule extends b {
          }
       }
 
-      for (Entry var13 : net.agartha.client.util.d.inChunk(l).entrySet()) {
-         if (((net.agartha.client.util.d.a)var13.getValue()).block().equals(Blocks.SPAWNER)) {
+      for (Entry var13 : BlockEntityTracker.inChunk(l).entrySet()) {
+         if (((BlockEntityTracker.a)var13.getValue()).block().equals(Blocks.SPAWNER)) {
             BlockPos var14 = (BlockPos)var13.getKey();
             boolean var9 = false;
             if (var5 != null) {
@@ -475,15 +484,15 @@ public final class SpawnerNotifierModule extends b {
       if (list.size() == 1) {
          SpawnerNotifierModule.SpawnerEntry var3 = (SpawnerNotifierModule.SpawnerEntry)list.get(0);
          BlockPos var4 = var3.pos();
-         aj.getInstance().pushAlert(String.format("Spawner detected — %s (%d %d %d)", var3.entityName(), var4.getX(), var4.getY(), var4.getZ()));
+         NotificationManager.getInstance().pushAlert(String.format("Spawner detected — %s (%d %d %d)", var3.entityName(), var4.getX(), var4.getY(), var4.getZ()));
       } else if (!list.isEmpty()) {
-         aj.getInstance().pushAlert("Spawner detected — " + list.size() + " found");
+         NotificationManager.getInstance().pushAlert("Spawner detected — " + list.size() + " found");
       }
 
       if (this.sChatNotify.value().get()) {
          for (SpawnerNotifierModule.SpawnerEntry var7 : list) {
             BlockPos var5 = var7.pos();
-            ab.send("Spawner", String.format("%s at %d %d %d", var7.entityName(), var5.getX(), var5.getY(), var5.getZ()));
+            ChatSender.send("Spawner", String.format("%s at %d %d %d", var7.entityName(), var5.getX(), var5.getY(), var5.getZ()));
          }
       }
    }

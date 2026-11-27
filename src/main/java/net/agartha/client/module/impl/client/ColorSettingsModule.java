@@ -1,37 +1,38 @@
 package net.agartha.client.module.impl.client;
-
-import net.agartha.client.b_pkg.a;
-import net.agartha.client.module.b;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.render.ColorEffectController;
+import net.agartha.client.event.impl.EndClientTickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
 @Environment(EnvType.CLIENT)
-public final class ColorSettingsModule extends b {
-   private final j hue = (j)this.addSetting(new j("Hue", 0.0F, -180.0F, 180.0F));
-   private final j saturation = (j)this.addSetting(new j("Saturation", 1.0F, 0.0F, 2.0F));
-   private final j brightness = (j)this.addSetting(new j("Brightness", 1.0F, 0.0F, 2.0F));
-   private final j contrast = (j)this.addSetting(new j("Contrast", 1.0F, 0.0F, 2.0F));
-   private final c tint = (c)this.addSetting(new c("Tint Color", -6595329));
-   private final j tintStrength = (j)this.addSetting(new j("Tint Strength", 0.0F, 0.0F, 1.0F));
+public final class ColorSettingsModule extends Module {
+   private final NumberSetting hue = (NumberSetting)this.addSetting(new NumberSetting("Hue", 0.0F, -180.0F, 180.0F));
+   private final NumberSetting saturation = (NumberSetting)this.addSetting(new NumberSetting("Saturation", 1.0F, 0.0F, 2.0F));
+   private final NumberSetting brightness = (NumberSetting)this.addSetting(new NumberSetting("Brightness", 1.0F, 0.0F, 2.0F));
+   private final NumberSetting contrast = (NumberSetting)this.addSetting(new NumberSetting("Contrast", 1.0F, 0.0F, 2.0F));
+   private final ColorSetting tint = (ColorSetting)this.addSetting(new ColorSetting("Tint Color", -6595329));
+   private final NumberSetting tintStrength = (NumberSetting)this.addSetting(new NumberSetting("Tint Strength", 0.0F, 0.0F, 1.0F));
 
    public ColorSettingsModule() {
-      super("Color Settings", "Adjust world color with hue, saturation, brightness, and contrast.", net.agartha.client.module.c.CLIENT);
-      this.hue.onChange(a::markDirty);
-      this.saturation.onChange(a::markDirty);
-      this.brightness.onChange(a::markDirty);
-      this.contrast.onChange(a::markDirty);
-      this.tint.onChange(a::markDirty);
-      this.tintStrength.onChange(a::markDirty);
+      super("Color Settings", "Adjust world color with hue, saturation, brightness, and contrast.", ModuleCategory.CLIENT);
+      this.hue.onChange(ColorEffectController::markDirty);
+      this.saturation.onChange(ColorEffectController::markDirty);
+      this.brightness.onChange(ColorEffectController::markDirty);
+      this.contrast.onChange(ColorEffectController::markDirty);
+      this.tint.onChange(ColorEffectController::markDirty);
+      this.tintStrength.onChange(ColorEffectController::markDirty);
       this.tint.visibleWhen(() -> this.tintStrength.get() > 0.0F);
-      net.agartha.client.d.a_pkg.c.TYPE.listen(this, arg -> a.tick(MinecraftClient.getInstance()));
+      EndClientTickEvent.TYPE.listen(this, arg -> ColorEffectController.tick(MinecraftClient.getInstance()));
    }
 
    protected void onDisable() {
-      a.clearIfActive(MinecraftClient.getInstance());
-      a.markDirty();
+      ColorEffectController.clearIfActive(MinecraftClient.getInstance());
+      ColorEffectController.markDirty();
    }
 
    public float hue() {

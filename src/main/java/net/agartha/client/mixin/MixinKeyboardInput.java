@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.q;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SneakModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.input.Input;
@@ -19,9 +19,9 @@ public abstract class MixinKeyboardInput extends Input {
       at = {@At("TAIL")}
    )
    private void agartha$sneakVanilla(CallbackInfo callbackInfo) {
-      q var2 = e.get(q.class);
+      SneakModule var2 = ModuleManager.get(SneakModule.class);
       if (var2 != null && var2.doVanilla()) {
-         this.playerInput = q.forceSneak(this.playerInput);
+         this.playerInput = SneakModule.forceSneak(this.playerInput);
       }
    }
 }

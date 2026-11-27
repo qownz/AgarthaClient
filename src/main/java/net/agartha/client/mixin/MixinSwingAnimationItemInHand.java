@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.t;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.SwingAnimationModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.item.HeldItemRenderer;
@@ -22,7 +22,7 @@ public abstract class MixinSwingAnimationItemInHand {
       require = 0
    )
    private void agartha$swing(float f, MatrixStack matrixStack, int i, Arm arm, CallbackInfo callbackInfo) {
-      t var6 = e.get(t.class);
+      SwingAnimationModule var6 = ModuleManager.get(SwingAnimationModule.class);
       if (var6 != null && var6.shouldApply(arm) && !var6.skipWhileIdle(f)) {
          var6.apply(matrixStack, arm, f);
          callbackInfo.cancel();

@@ -1,9 +1,9 @@
 package net.agartha.client.mixin;
 
 import io.netty.channel.ChannelHandlerContext;
-import net.agartha.client.d.a_pkg.i;
-import net.agartha.client.d.a_pkg.j;
-import net.agartha.client.d.a_pkg.k;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.PacketReceiveNettyEvent;
+import net.agartha.client.event.impl.PacketSendEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.network.ClientConnection;
@@ -22,10 +22,10 @@ public abstract class MixinClientConnection {
       cancellable = true
    )
    private void agartha$onPacketReceive(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo callbackInfo) {
-      if (j.dispatchSync(packet)) {
+      if (PacketReceiveNettyEvent.dispatchSync(packet)) {
          callbackInfo.cancel();
       } else {
-         i.dispatchAsync(packet);
+         PacketReceiveEvent.dispatchAsync(packet);
       }
    }
 
@@ -35,7 +35,7 @@ public abstract class MixinClientConnection {
       cancellable = true
    )
    private void agartha$onPacketSend(Packet<?> packet, CallbackInfo callbackInfo) {
-      if (k.dispatchSync(packet)) {
+      if (PacketSendEvent.dispatchSync(packet)) {
          callbackInfo.cancel();
       }
    }

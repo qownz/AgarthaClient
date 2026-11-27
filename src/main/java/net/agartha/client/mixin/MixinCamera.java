@@ -1,9 +1,10 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
+import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.client.UtilitiesModule;
-import net.agartha.client.module.impl.misc.k;
-import net.agartha.client.module.impl.render.d;
+import net.agartha.client.module.impl.misc.FreecamModule;
+import net.agartha.client.module.impl.render.FreelookModule;
+import net.agartha.client.util.render.ChunkCulling;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.Camera;
@@ -49,7 +50,7 @@ public abstract class MixinCamera {
       require = 0
    )
    private float agartha$f5Zoom(float f) {
-      UtilitiesModule var2 = e.get(UtilitiesModule.class);
+      UtilitiesModule var2 = ModuleManager.get(UtilitiesModule.class);
       return var2 != null && var2.f5Zoom() ? var2.f5Distance() : f;
    }
 
@@ -58,14 +59,14 @@ public abstract class MixinCamera {
       at = {@At("RETURN")}
    )
    private void agartha$cameraOverride(World world, Entity entity, boolean bl, boolean bl2, float f, CallbackInfo callbackInfo) {
-      k var8 = e.get(k.class);
+      FreecamModule var8 = ModuleManager.get(FreecamModule.class);
       if (var8 != null && var8.isEnabled()) {
          this.setPos(var8.getX(f), var8.getY(f), var8.getZ(f));
          this.setRotation(var8.getYaw(f), var8.getPitch(f));
          this.thirdPerson = true;
-         net.agartha.client.util.e.update(world, ((Camera)(Object)this).getCameraPos());
+         ChunkCulling.update(world, ((Camera)(Object)this).getCameraPos());
       } else {
-         d var9 = e.get(d.class);
+         FreelookModule var9 = ModuleManager.get(FreelookModule.class);
          if (var9 != null && var9.isEnabled() && entity != null) {
             double var10 = MathHelper.lerp(f, entity.lastX, entity.getX());
             double var12 = MathHelper.lerp(f, entity.lastY, entity.getY()) + entity.getStandingEyeHeight();
@@ -75,9 +76,9 @@ public abstract class MixinCamera {
             float var16 = var9.distance();
             this.moveBy(-(var9.wallClip() ? this.clipToSpace(var16) : var16), 0.0F, 0.0F);
             this.thirdPerson = true;
-            net.agartha.client.util.e.update(world, ((Camera)(Object)this).getCameraPos());
+            ChunkCulling.update(world, ((Camera)(Object)this).getCameraPos());
          } else {
-            net.agartha.client.util.e.release();
+            ChunkCulling.release();
          }
       }
    }

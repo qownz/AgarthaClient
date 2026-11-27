@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.chunk.ChunkOcclusionDataBuilder;
@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin({ChunkOcclusionDataBuilder.class})
 public abstract class MixinNoRenderVisGraph {
    @Unique
-   private static m agartha$noRenderCache;
+   private static NoRenderModule agartha$noRenderCache;
 
    @Inject(
       method = {"markClosed"},
@@ -24,17 +24,17 @@ public abstract class MixinNoRenderVisGraph {
       cancellable = true
    )
    private void agartha$noCaveCulling(BlockPos blockPos, CallbackInfo callbackInfo) {
-      m var3 = agartha$noRender();
+      NoRenderModule var3 = agartha$noRender();
       if (var3 != null && var3.noCaveCulling()) {
          callbackInfo.cancel();
       }
    }
 
    @Unique
-   private static m agartha$noRender() {
-      m var0 = agartha$noRenderCache;
+   private static NoRenderModule agartha$noRender() {
+      NoRenderModule var0 = agartha$noRenderCache;
       if (var0 == null) {
-         var0 = e.get(m.class);
+         var0 = ModuleManager.get(NoRenderModule.class);
          agartha$noRenderCache = var0;
       }
 

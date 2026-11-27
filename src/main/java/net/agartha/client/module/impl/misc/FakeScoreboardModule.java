@@ -4,13 +4,15 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import net.agartha.client.d.f;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.e;
-import net.agartha.client.module.a_pkg.l;
-import net.agartha.client.util.aa;
-import net.agartha.client.util.q;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.ChatSendEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.StringSetting;
+import net.agartha.client.util.math.NumberUtil;
+import net.agartha.client.util.render.TabFooter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -20,7 +22,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 
 @Environment(EnvType.CLIENT)
-public final class FakeScoreboardModule extends b {
+public final class FakeScoreboardModule extends Module {
    private static final int GRAY = 11184810;
    private static final int GREEN = 5635925;
    private static final int SLOT_MONEY = 0;
@@ -36,18 +38,18 @@ public final class FakeScoreboardModule extends b {
    private static final String DEFAULT_KILLS = "0";
    private static final String DEFAULT_DEATHS = "0";
    private static final String DEFAULT_PLAYTIME = "0d";
-   private final l name = (l)this.addSetting(new l("Name", "/AgarthaClient"));
-   private final l money = (l)this.addSetting(new l("Money", "1m"));
-   private final l shards = (l)this.addSetting(new l("Shards", "0"));
-   private final l kills = (l)this.addSetting(new l("Kills", "0"));
-   private final l deaths = (l)this.addSetting(new l("Deaths", "0"));
-   private final l playtime = (l)this.addSetting(new l("Playtime", "0d"));
-   private final net.agartha.client.module.a_pkg.b sidebar = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Sidebar", true));
-   private final net.agartha.client.module.a_pkg.b balanceCommand = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Balance Command", true)
+   private final StringSetting name = (StringSetting)this.addSetting(new StringSetting("Name", "/AgarthaClient"));
+   private final StringSetting money = (StringSetting)this.addSetting(new StringSetting("Money", "1m"));
+   private final StringSetting shards = (StringSetting)this.addSetting(new StringSetting("Shards", "0"));
+   private final StringSetting kills = (StringSetting)this.addSetting(new StringSetting("Kills", "0"));
+   private final StringSetting deaths = (StringSetting)this.addSetting(new StringSetting("Deaths", "0"));
+   private final StringSetting playtime = (StringSetting)this.addSetting(new StringSetting("Playtime", "0d"));
+   private final BooleanSetting sidebar = (BooleanSetting)this.addSetting(new BooleanSetting("Sidebar", true));
+   private final BooleanSetting balanceCommand = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Balance Command", true)
    );
-   private final net.agartha.client.module.a_pkg.b deductOnPay = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Deduct On Pay", true)
+   private final BooleanSetting deductOnPay = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Deduct On Pay", true)
    );
    private String lastMoneyText;
    private double liveBalance;
@@ -57,7 +59,7 @@ public final class FakeScoreboardModule extends b {
    private final boolean[] drawHadNumber = new boolean[5];
 
    public FakeScoreboardModule() {
-      super("Fake Stats", "Shows your own money, shards, kills, deaths and playtime on the sidebar, the tab and /bal.", c.CLIENT);
+      super("Fake Stats", "Shows your own money, shards, kills, deaths and playtime on the sidebar, the tab and /bal.", ModuleCategory.CLIENT);
       this.name.visibleWhen(this.sidebar::get);
    }
 
@@ -70,11 +72,11 @@ public final class FakeScoreboardModule extends b {
       fillBlank(this.playtime, "0d");
       this.lastMoneyText = null;
       this.syncFromSetting();
-      aa.reapply();
+      TabFooter.reapply();
    }
 
    protected void onDisable() {
-      aa.reapply();
+      TabFooter.reapply();
    }
 
    public static void beginPass() {
@@ -112,15 +114,15 @@ public final class FakeScoreboardModule extends b {
    public static void deductPaid(String string) {
       FakeScoreboardModule var1 = current();
       if (var1 != null && var1.isEnabled() && var1.deductOnPay.get()) {
-         double var2 = q.parse(string);
+         double var2 = NumberUtil.parse(string);
          if (!Double.isNaN(var2)) {
             var1.deduct(var2);
          }
       }
    }
 
-   @f
-   public void onChatSend(net.agartha.client.d.a_pkg.b arg) {
+   @EventListener
+   public void onChatSend(ChatSendEvent arg) {
       if (arg.message != null && this.tryInterceptBalance(arg.message)) {
          arg.setCancelled(true);
       }
@@ -137,7 +139,7 @@ public final class FakeScoreboardModule extends b {
       String var1 = this.money.get();
       if (!Objects.equals(var1, this.lastMoneyText)) {
          this.lastMoneyText = var1;
-         double var2 = q.parse(var1);
+         double var2 = NumberUtil.parse(var1);
          this.liveBalance = Double.isNaN(var2) ? 0.0 : Math.max(0.0, var2);
       }
    }
@@ -150,7 +152,7 @@ public final class FakeScoreboardModule extends b {
    private void deduct(double d) {
       this.syncFromSetting();
       this.liveBalance = Math.max(0.0, this.liveBalance - Math.max(0.0, d));
-      aa.reapply();
+      TabFooter.reapply();
    }
 
    private Text replaceTitle(Text text) {
@@ -167,7 +169,7 @@ public final class FakeScoreboardModule extends b {
             if (var4 >= 5) {
                return text;
             } else {
-               boolean var5 = q.lastNumberSpan(var3) != null || var4 == 4 && q.valueSpan(var3) != null;
+               boolean var5 = NumberUtil.lastNumberSpan(var3) != null || var4 == 4 && NumberUtil.valueSpan(var3) != null;
                if (!bl) {
                   this.drawHadNumber[var4] = var5;
                }
@@ -175,10 +177,10 @@ public final class FakeScoreboardModule extends b {
                String var6 = this.displayOf(var4);
                if (var6.isEmpty()) {
                   return text;
-               } else if (var4 == 4 && q.valueSpan(var3) != null) {
-                  return q.replaceValue(text, var6);
+               } else if (var4 == 4 && NumberUtil.valueSpan(var3) != null) {
+                  return NumberUtil.replaceValue(text, var6);
                } else if (var5) {
-                  return q.replaceNumber(text, var6);
+                  return NumberUtil.replaceNumber(text, var6);
                } else {
                   Style var7 = leadingStyle(text);
                   String var8 = var3.stripTrailing();
@@ -220,7 +222,7 @@ public final class FakeScoreboardModule extends b {
 
    private String moneyDisplay() {
       String var1 = shown(this.money, "1m");
-      return Double.isNaN(q.parse(var1)) ? var1 : q.shortForm(this.getLiveBalance());
+      return Double.isNaN(NumberUtil.parse(var1)) ? var1 : NumberUtil.shortForm(this.getLiveBalance());
    }
 
    private String nameText() {
@@ -233,7 +235,7 @@ public final class FakeScoreboardModule extends b {
       }
    }
 
-   private static String shown(l arg, String string) {
+   private static String shown(StringSetting arg, String string) {
       String var2 = arg.get();
       if (var2 != null && !var2.trim().isEmpty()) {
          return var2.trim();
@@ -243,7 +245,7 @@ public final class FakeScoreboardModule extends b {
       }
    }
 
-   private static void fillBlank(l arg, String string) {
+   private static void fillBlank(StringSetting arg, String string) {
       shown(arg, string);
    }
 
@@ -301,6 +303,6 @@ public final class FakeScoreboardModule extends b {
    }
 
    private static FakeScoreboardModule current() {
-      return (FakeScoreboardModule)e.get(FakeScoreboardModule.class);
+      return (FakeScoreboardModule)ModuleManager.get(FakeScoreboardModule.class);
    }
 }

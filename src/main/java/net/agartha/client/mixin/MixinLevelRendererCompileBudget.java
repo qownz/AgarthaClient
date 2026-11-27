@@ -2,7 +2,7 @@ package net.agartha.client.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.agartha.client.util.t;
+import net.agartha.client.util.world.ChunkRebuilder;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.WorldRenderer;
@@ -45,7 +45,7 @@ public abstract class MixinLevelRendererCompileBudget {
       require = 0
    )
    private void agartha$prewarm(CallbackInfo callbackInfo) {
-      t.run(((AccessorLevelRendererViewArea)(Object)this).agartha$viewArea());
+      ChunkRebuilder.run(((AccessorLevelRendererViewArea)(Object)this).agartha$viewArea());
    }
 
    @WrapOperation(

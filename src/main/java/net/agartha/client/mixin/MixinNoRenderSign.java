@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.block.entity.AbstractSignBlockEntityRenderer;
@@ -28,7 +28,7 @@ public abstract class MixinNoRenderSign {
       boolean bl,
       CallbackInfo callbackInfo
    ) {
-      m var6 = e.get(m.class);
+      NoRenderModule var6 = ModuleManager.get(NoRenderModule.class);
       if (var6 != null && var6.noSignText()) {
          callbackInfo.cancel();
       }

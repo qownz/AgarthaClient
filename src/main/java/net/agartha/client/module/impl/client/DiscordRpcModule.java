@@ -20,11 +20,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.UUID;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.e;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.setting.BooleanSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -32,7 +33,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 
 @Environment(EnvType.CLIENT)
-public final class DiscordRpcModule extends b {
+public final class DiscordRpcModule extends Module {
    private static final String APP_ID = "1550607468458025030";
    private static final String LOGO_URL = "https://cdn.discordapp.com/app-icons/1550607468458025030/70aa89e20d6d464c386bd810585f7a73.png?size=512";
    private static final String INVITE_TEXT = "discord.gg/AgarthaClient";
@@ -40,11 +41,11 @@ public final class DiscordRpcModule extends b {
    private static final long MIN_UPDATE_MS = 5000L;
    private static final long RECONNECT_MS = 15000L;
    private static final long ROTATE_MS = 12000L;
-   private final net.agartha.client.module.a_pkg.b sShowServer = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Server", false)
+   private final BooleanSetting sShowServer = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Server", false)
    );
-   private final net.agartha.client.module.a_pkg.b sShowModules = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Show Modules", true)
+   private final BooleanSetting sShowModules = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Show Modules", true)
    );
    private static final long SESSION_START = System.currentTimeMillis() / 1000L;
    private static final String TOKEN = bakedToken();
@@ -59,7 +60,7 @@ public final class DiscordRpcModule extends b {
    private int snapshotTimer;
 
    public DiscordRpcModule() {
-      super("Discord RPC", "Shows Agartha on your Discord profile: logo, version, a session timer and the server invite.", c.CLIENT);
+      super("Discord RPC", "Shows Agartha on your Discord profile: logo, version, a session timer and the server invite.", ModuleCategory.CLIENT);
       this.setEnabled(true);
    }
 
@@ -81,8 +82,8 @@ public final class DiscordRpcModule extends b {
       }
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       if (++this.snapshotTimer >= 20) {
          this.snapshotTimer = 0;
          this.snapshot();
@@ -106,7 +107,7 @@ public final class DiscordRpcModule extends b {
       this.details = var2;
       int var6 = 0;
 
-      for (b var5 : e.all()) {
+      for (Module var5 : ModuleManager.all()) {
          if (var5.isEnabled()) {
             var6++;
          }

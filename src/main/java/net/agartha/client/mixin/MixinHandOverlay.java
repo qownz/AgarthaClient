@@ -2,7 +2,7 @@ package net.agartha.client.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.agartha.client.module.impl.render.f;
+import net.agartha.client.module.impl.render.HandOverlayModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -22,7 +22,7 @@ public abstract class MixinHandOverlay {
       )}
    )
    private void agartha$handOverlay(RenderDispatcher renderDispatcher, Operation<Void> operation) {
-      if (f.active != null && f.beginCapture()) {
+      if (HandOverlayModule.active != null && HandOverlayModule.beginCapture()) {
          boolean var3 = false;
 
          try {
@@ -30,7 +30,7 @@ public abstract class MixinHandOverlay {
             MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw();
             var3 = true;
          } finally {
-            f.endCapture(var3);
+            HandOverlayModule.endCapture(var3);
          }
       } else {
          operation.call(new Object[]{renderDispatcher});

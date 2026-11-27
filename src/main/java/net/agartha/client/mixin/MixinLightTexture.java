@@ -1,6 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.impl.render.e;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.FullbrightModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -21,7 +22,7 @@ public abstract class MixinLightTexture {
       index = 0
    )
    private float agartha$fullbrightGamma(float f) {
-      e var2 = net.agartha.client.module.e.get(e.class);
+      FullbrightModule var2 = ModuleManager.get(FullbrightModule.class);
       return var2 == null ? f : var2.blend(f);
    }
 }

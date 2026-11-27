@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.MapRenderState;
@@ -26,7 +26,7 @@ public abstract class MixinNoRenderMap {
    private void agartha$noMapContents(
       MapRenderState mapRenderState, MatrixStack matrixStack, OrderedRenderCommandQueue orderedRenderCommandQueue, boolean bl, int i, CallbackInfo callbackInfo
    ) {
-      m var7 = e.get(m.class);
+      NoRenderModule var7 = ModuleManager.get(NoRenderModule.class);
       if (var7 != null && var7.noMapContents()) {
          callbackInfo.cancel();
       }
@@ -37,7 +37,7 @@ public abstract class MixinNoRenderMap {
       at = {@At("RETURN")}
    )
    private void agartha$noMapMarkers(MapIdComponent mapIdComponent, MapState mapState, MapRenderState mapRenderState, CallbackInfo callbackInfo) {
-      m var5 = e.get(m.class);
+      NoRenderModule var5 = ModuleManager.get(NoRenderModule.class);
       if (var5 != null && var5.noMapMarkers()) {
          mapRenderState.decorations.clear();
       }

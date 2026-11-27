@@ -5,16 +5,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import net.agartha.client.c.e;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.ak;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.i;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.module.a_pkg.l;
-import net.agartha.client.util.ab;
+import net.agartha.client.config.ModuleConfigManager;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationSounds;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.EnumSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.module.setting.StringSetting;
+import net.agartha.client.util.net.ChatSender;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -23,15 +24,15 @@ import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.text.Text;
 
 @Environment(EnvType.CLIENT)
-public final class PlayerAlertModule extends b {
+public final class PlayerAlertModule extends Module {
    private static final float IN_SECONDS = 0.22F;
    private static final float HOLD_SECONDS = 3.4F;
    private static final float OUT_SECONDS = 0.45F;
    private static final long RTP_COOLDOWN_MS = 8000L;
-   private final j sRange = (j)this.addSetting(new j("Range", 64.0F, 8.0F, 256.0F).whole());
-   private final i sAction = (i)this.addSetting(new i("On Spot", "Alert Only", new String[]{"Alert Only", "Auto Quit", "Auto RTP"}));
-   private final net.agartha.client.module.a_pkg.b sSound = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Sound", true));
-   private final l sWhitelist = (l)this.addSetting(new l("Whitelist", "", 512));
+   private final NumberSetting sRange = (NumberSetting)this.addSetting(new NumberSetting("Range", 64.0F, 8.0F, 256.0F).whole());
+   private final EnumSetting sAction = (EnumSetting)this.addSetting(new EnumSetting("On Spot", "Alert Only", new String[]{"Alert Only", "Auto Quit", "Auto RTP"}));
+   private final BooleanSetting sSound = (BooleanSetting)this.addSetting(new BooleanSetting("Sound", true));
+   private final StringSetting sWhitelist = (StringSetting)this.addSetting(new StringSetting("Whitelist", "", 512));
    private final Set<String> whitelist = new HashSet<>();
    private String whitelistCache;
    private final Set<String> knownNearby = new HashSet<>();
@@ -43,7 +44,7 @@ public final class PlayerAlertModule extends b {
    private long bannerStart;
 
    public PlayerAlertModule() {
-      super("Player Alert", "Warns when another player comes near, and can quit or /rtp away for you.", c.DONUT);
+      super("Player Alert", "Warns when another player comes near, and can quit or /rtp away for you.", ModuleCategory.DONUT);
       this.sWhitelist.visibleWhen(() -> false);
    }
 
@@ -108,11 +109,11 @@ public final class PlayerAlertModule extends b {
 
    private void setWhitelist(List<String> list) {
       this.sWhitelist.set(String.join(", ", list));
-      e.getInstance().save();
+      ModuleConfigManager.getInstance().save();
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          double var3 = this.sRange.getInt();
@@ -152,11 +153,11 @@ public final class PlayerAlertModule extends b {
                if (var17 - this.lastRtpMs >= 8000L && var2.getNetworkHandler() != null) {
                   this.lastRtpMs = var17;
                   var2.getNetworkHandler().sendChatCommand("rtp");
-                  ab.send("Player", var7.getGameProfile().name() + " nearby, /rtp");
+                  ChatSender.send("Player", var7.getGameProfile().name() + " nearby, /rtp");
                }
             } else {
                for (AbstractClientPlayerEntity var18 : this.newcomers) {
-                  ab.send("Player", var18.getGameProfile().name() + " is nearby");
+                  ChatSender.send("Player", var18.getGameProfile().name() + " is nearby");
                }
 
                this.raiseBanner(var7.getGameProfile().name());
@@ -173,7 +174,7 @@ public final class PlayerAlertModule extends b {
       this.bannerStart = System.nanoTime();
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (this.sSound.get() && var2.getSoundManager() != null) {
-         var2.getSoundManager().play(PositionedSoundInstance.ui(ak.resolve("Pop 1"), 1.0F, 0.95F));
+         var2.getSoundManager().play(PositionedSoundInstance.ui(NotificationSounds.resolve("Pop 1"), 1.0F, 0.95F));
       }
    }
 

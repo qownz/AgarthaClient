@@ -15,23 +15,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.d.a_pkg.i;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.p;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.f;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.ac;
-import net.agartha.client.util.ad;
-import net.agartha.client.util.l;
-import net.agartha.client.util.u;
-import net.agartha.client.util.w;
-import net.agartha.client.util.y;
-import net.agartha.client.util.u.a;
-import net.agartha.client.util.y.e;
-import net.agartha.client.util.y.g;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.PacketReceiveEvent;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.ScanFrameEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.TracerOverlay;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.color.ColorSettingWiring;
+import net.agartha.client.util.perf.TimeSlice;
+import net.agartha.client.util.render.FadeTracker;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.render.LabelStacker;
+import net.agartha.client.util.render.OffscreenIndicator;
+import net.agartha.client.util.render.PlateRenderer;
+import net.agartha.client.util.world.GeodeAnalyzer;
+import net.agartha.client.util.world.LightStore;
+import net.agartha.client.util.world.LightStore.a;
+import net.agartha.client.util.world.GeodeAnalyzer.e;
+import net.agartha.client.util.world.GeodeAnalyzer.g;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -48,7 +54,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 
 @Environment(EnvType.CLIENT)
-public class SusChunkFinderModule extends b implements f {
+public class SusChunkFinderModule extends Module implements TracerOverlay {
    private static final float TRACER_WIDTH = 1.5F;
    private static final boolean DEBUG = Boolean.getBoolean("agartha.sus.debug");
    private static final long SCAN_BUDGET_NS = 2000000L;
@@ -73,19 +79,19 @@ public class SusChunkFinderModule extends b implements f {
    private static final double MAX_ZONE_SIZE = 48.0;
    private static final float LINE_WIDTH = 1.5F;
    private static final long PIN_RELOAD_GRACE_MS = 20000L;
-   private final j sSensitivity = (j)this.addSetting(new j("Sensitivity", 3.0F, 1.0F, 10.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sThemeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", true)
+   private final NumberSetting sSensitivity = (NumberSetting)this.addSetting(new NumberSetting("Sensitivity", 3.0F, 1.0F, 10.0F).whole());
+   private final BooleanSetting sThemeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", true)
    );
-   private final net.agartha.client.module.a_pkg.b sCustomColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", false)
+   private final BooleanSetting sCustomColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", false)
    );
-   private final c sColor = (c)this.addSetting(new c("Color", -11549705));
-   private final j sPlateY = (j)this.addSetting(new j("Plate Y", 60.0F, -64.0F, 320.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sTracers = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Tracers", false));
-   private final u light = new u();
-   private final net.agartha.client.k.c slice = new net.agartha.client.k.c();
-   private final Map<Long, List<net.agartha.client.util.y.b>> scanned = new HashMap<>();
+   private final ColorSetting sColor = (ColorSetting)this.addSetting(new ColorSetting("Color", -11549705));
+   private final NumberSetting sPlateY = (NumberSetting)this.addSetting(new NumberSetting("Plate Y", 60.0F, -64.0F, 320.0F).whole());
+   private final BooleanSetting sTracers = (BooleanSetting)this.addSetting(new BooleanSetting("Tracers", false));
+   private final LightStore light = new LightStore();
+   private final TimeSlice slice = new TimeSlice();
+   private final Map<Long, List<GeodeAnalyzer.b>> scanned = new HashMap<>();
    private final ArrayDeque<Long> queue = new ArrayDeque<>();
    private final Set<Long> queued = new HashSet<>();
    private final Set<Long> lightRescans = new LinkedHashSet<>();
@@ -102,7 +108,7 @@ public class SusChunkFinderModule extends b implements f {
    private final ArrayDeque<Long> seedQueue = new ArrayDeque<>();
    private boolean chunksChanged = true;
    private int sinceRebuild;
-   private final List<net.agartha.client.util.y.b> rebuildScratch = new ArrayList<>();
+   private final List<GeodeAnalyzer.b> rebuildScratch = new ArrayList<>();
    private static final ExecutorService GROUPER = Executors.newSingleThreadExecutor(runnable -> {
       Thread var1 = new Thread(runnable, "Agartha Sus Grouper");
       var1.setDaemon(true);
@@ -129,8 +135,8 @@ public class SusChunkFinderModule extends b implements f {
    }
 
    protected SusChunkFinderModule(String string, String string2) {
-      super(string, string2, net.agartha.client.module.c.DONUT);
-      ac.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, true);
+      super(string, string2, ModuleCategory.DONUT);
+      ColorSettingWiring.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, true);
       this.sSensitivity.onChange(this::reset);
    }
 
@@ -192,8 +198,8 @@ public class SusChunkFinderModule extends b implements f {
       this.rebuildScratch.clear();
    }
 
-   @net.agartha.client.d.f
-   public void onPacketReceive(i arg) {
+   @EventListener
+   public void onPacketReceive(PacketReceiveEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && isOverworld(var3)) {
@@ -233,17 +239,17 @@ public class SusChunkFinderModule extends b implements f {
    }
 
    private void recordChange(MinecraftClient minecraftClient, ClientWorld clientWorld, long l, int i, int j, int k, int m, int n) {
-      if (minecraftClient.player != null && y.classify(m, n) != net.agartha.client.util.y.c.NONE) {
+      if (minecraftClient.player != null && GeodeAnalyzer.classify(m, n) != GeodeAnalyzer.c.NONE) {
          if (this.atKnownGeode(l, i, j, k)) {
             long var10 = System.currentTimeMillis();
             Long var12 = this.arrivedAt.get(l);
             if (var12 != null && var10 - var12 >= 10000L) {
                int var13 = clientWorld.getSimulationDistance() + 1;
-               if (y.chunkDistance(l, minecraftClient.player.getChunkPos().toLong()) > var13) {
+               if (GeodeAnalyzer.chunkDistance(l, minecraftClient.player.getChunkPos().toLong()) > var13) {
                   this.events.computeIfAbsent(l, long_ -> new ArrayDeque<>()).addLast(new double[]{var10, i + 0.5, k + 0.5});
                   this.dirty = true;
                   if (DEBUG) {
-                     AgarthaClientMod.LOGGER.info("[sus] {} at {},{} light {} -> {}", new Object[]{y.classify(m, n), i, k, m, n});
+                     AgarthaClientMod.LOGGER.info("[sus] {} at {},{} light {} -> {}", new Object[]{GeodeAnalyzer.classify(m, n), i, k, m, n});
                   }
                }
             }
@@ -262,7 +268,7 @@ public class SusChunkFinderModule extends b implements f {
       } else {
          byte var7 = 5;
 
-         for (net.agartha.client.util.y.b var9 : (Iterable<net.agartha.client.util.y.b>) var6) {
+         for (GeodeAnalyzer.b var9 : (Iterable<GeodeAnalyzer.b>) var6) {
             if (Math.abs(var9.x() - i) <= var7 && Math.abs(var9.y() - j) <= var7 && Math.abs(var9.z() - k) <= var7) {
                return true;
             }
@@ -272,8 +278,8 @@ public class SusChunkFinderModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null) {
@@ -314,8 +320,8 @@ public class SusChunkFinderModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onScanFrame(p arg) {
+   @EventListener
+   public void onScanFrame(ScanFrameEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null && var3 == this.lastLevel && isOverworld(var3)) {
@@ -525,10 +531,10 @@ public class SusChunkFinderModule extends b implements f {
       }
    }
 
-   private List<net.agartha.client.util.y.b> scan(ClientWorld clientWorld, WorldChunk worldChunk) {
+   private List<GeodeAnalyzer.b> scan(ClientWorld clientWorld, WorldChunk worldChunk) {
       ChunkPos var3 = worldChunk.getPos();
       List var4 = this.light.emitters(var3.x, var3.z, -64, 128);
-      return var4.size() > 1024 ? List.of() : y.buds(clientWorld, var4);
+      return var4.size() > 1024 ? List.of() : GeodeAnalyzer.buds(clientWorld, var4);
    }
 
    private static WorldChunk loadedChunk(ClientWorld clientWorld, long l) {
@@ -579,7 +585,7 @@ public class SusChunkFinderModule extends b implements f {
 
       this.pendingCollect = var1;
       this.pendingEpoch = this.groupEpoch;
-      this.pendingGroups = CompletableFuture.supplyAsync(() -> y.geodes(var11), GROUPER);
+      this.pendingGroups = CompletableFuture.supplyAsync(() -> GeodeAnalyzer.geodes(var11), GROUPER);
    }
 
    private boolean applyPendingGroups() {
@@ -641,12 +647,12 @@ public class SusChunkFinderModule extends b implements f {
 
          List var11 = this.cachedGeodes;
          int var4 = this.sSensitivity.getInt();
-         int var5 = y.minClusters(var4);
-         int var6 = y.minYoungBuds(var4);
-         int var7 = y.minEvents(var4);
+         int var5 = GeodeAnalyzer.minClusters(var4);
+         int var6 = GeodeAnalyzer.minYoungBuds(var4);
+         int var7 = GeodeAnalyzer.minEvents(var4);
          if (DEBUG) {
             for (e var9 : (Iterable<e>) var11) {
-               net.agartha.client.util.y.f var10 = y.tierOf(var9, var5, var6, true);
+               GeodeAnalyzer.f var10 = GeodeAnalyzer.tierOf(var9, var5, var6, true);
                AgarthaClientMod.LOGGER
                   .info(
                      "[sus] geode at {},{}: small {} medium {} large {} cluster {} -> {}",
@@ -657,8 +663,8 @@ public class SusChunkFinderModule extends b implements f {
             }
          }
 
-         Map var12 = y.flags(var11, this.activity(), var5, var6, true, var7);
-         this.zones = this.lockFoundZones(this.filterZones(y.zones(var12, 3), clientWorld));
+         Map var12 = GeodeAnalyzer.flags(var11, this.activity(), var5, var6, true, var7);
+         this.zones = this.lockFoundZones(this.filterZones(GeodeAnalyzer.zones(var12, 3), clientWorld));
       }
    }
 
@@ -707,12 +713,12 @@ public class SusChunkFinderModule extends b implements f {
          return true;
       } else {
          for (long var3 : arg.members()) {
-            int var5 = y.chunkX(var3);
-            int var6 = y.chunkZ(var3);
+            int var5 = GeodeAnalyzer.chunkX(var3);
+            int var6 = GeodeAnalyzer.chunkZ(var3);
 
             for (long var8 : arg2.members()) {
-               int var10 = Math.abs(var5 - y.chunkX(var8));
-               int var11 = Math.abs(var6 - y.chunkZ(var8));
+               int var10 = Math.abs(var5 - GeodeAnalyzer.chunkX(var8));
+               int var11 = Math.abs(var6 - GeodeAnalyzer.chunkZ(var8));
                if (Math.max(var10, var11) <= 3) {
                   return true;
                }
@@ -755,7 +761,7 @@ public class SusChunkFinderModule extends b implements f {
       for (long var10 : this.pinnedByChunk.keySet()) {
          if (loadedChunk(clientWorld, var10) != null) {
             this.pinHiddenAt.remove(var10);
-         } else if (y.chunkDistance(var10, var6) > i) {
+         } else if (GeodeAnalyzer.chunkDistance(var10, var6) > i) {
             var8.add(var10);
          } else {
             long var12 = this.pinHiddenAt.computeIfAbsent(var10, long_ -> var4);
@@ -771,7 +777,7 @@ public class SusChunkFinderModule extends b implements f {
       }
    }
 
-   private Map<Long, net.agartha.client.util.y.a> activity() {
+   private Map<Long, GeodeAnalyzer.a> activity() {
       long var1 = System.currentTimeMillis() - 600000L;
       HashMap var3 = new HashMap();
       Iterator var4 = this.events.entrySet().iterator();
@@ -795,15 +801,15 @@ public class SusChunkFinderModule extends b implements f {
                var9 += var12[2];
             }
 
-            var3.put((Long)var5.getKey(), new net.agartha.client.util.y.a(var6.size(), var7, var9));
+            var3.put((Long)var5.getKey(), new GeodeAnalyzer.a(var6.size(), var7, var9));
          }
       }
 
       return var3;
    }
 
-   @net.agartha.client.d.f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.player != null) {
          long var3 = System.nanoTime();
@@ -840,13 +846,13 @@ public class SusChunkFinderModule extends b implements f {
             if (!var15 && var25[3] <= 0.0) {
                var24.remove();
             } else {
-               float var26 = net.agartha.client.util.a_o.ease((float)var25[3]);
+               float var26 = FadeTracker.ease((float)var25[3]);
                double var17 = var25[2] / 2.0;
-               double var27 = net.agartha.client.util.o.y(
+               double var27 = LabelStacker.y(
                      1, (Long)var13.getKey(), var25[0] - var17, var23, var25[1] - var17, var25[0] + var17, var25[1] + var17, 0.35
                   )
-                  + net.agartha.client.util.a_o.rise(var26);
-               double var21 = var17 * net.agartha.client.util.a_o.pop(var26);
+                  + FadeTracker.rise(var26);
+               double var21 = var17 * FadeTracker.pop(var26);
                this.draw(new Box(var25[0] - var21, var27, var25[1] - var21, var25[0] + var21, var27 + 0.35, var25[1] + var21), var8, var26);
             }
          }
@@ -854,7 +860,7 @@ public class SusChunkFinderModule extends b implements f {
    }
 
    private int zoneRgb() {
-      return ac.argb(this.sThemeColor, this.sCustomColor, this.sColor, -1) & 16777215;
+      return ColorSettingWiring.argb(this.sThemeColor, this.sCustomColor, this.sColor, -1) & 16777215;
    }
 
    public boolean isTracerOverlayEnabled() {
@@ -865,8 +871,8 @@ public class SusChunkFinderModule extends b implements f {
       if (imDrawList != null && this.isTracerOverlayEnabled()) {
          MinecraftClient var4 = MinecraftClient.getInstance();
          if (var4.world != null && var4.player != null) {
-            float var5 = ad.originX(f);
-            float var6 = ad.originY("Crosshair", g);
+            float var5 = OffscreenIndicator.originX(f);
+            float var6 = OffscreenIndicator.originY("Crosshair", g);
             float var7 = 1.5F;
             int var8 = this.zoneRgb();
 
@@ -875,11 +881,11 @@ public class SusChunkFinderModule extends b implements f {
                float var12 = (float)var11[3];
                if (!(var12 <= 0.01F)) {
                   double var13 = var11[2] / 2.0;
-                  double var15 = net.agartha.client.util.o.y(
+                  double var15 = LabelStacker.y(
                         1, (Long)var10.getKey(), var11[0] - var13, this.sPlateY.get(), var11[1] - var13, var11[0] + var13, var11[1] + var13, 0.35
                      )
-                     + net.agartha.client.util.a_o.rise(net.agartha.client.util.a_o.ease(var12));
-                  ad.draw(imDrawList, var4, f, g, var5, var6, new Vec3d(var11[0], var15 + 0.175, var11[1]), argb(255.0F * var12, var8), var7);
+                     + FadeTracker.rise(FadeTracker.ease(var12));
+                  OffscreenIndicator.draw(imDrawList, var4, f, g, var5, var6, new Vec3d(var11[0], var15 + 0.175, var11[1]), argb(255.0F * var12, var8), var7);
                }
             }
          }
@@ -892,8 +898,8 @@ public class SusChunkFinderModule extends b implements f {
    }
 
    private void draw(Box box, int i, float f) {
-      if (!(f <= 0.0F) && net.agartha.client.util.l.isSafeCuboid(box)) {
-         w.plate(1, box, argb(200.0F * f, i), 1.5F, argb(90.0F * f, i));
+      if (!(f <= 0.0F) && FrustumCulling.isSafeCuboid(box)) {
+         PlateRenderer.plate(1, box, argb(200.0F * f, i), 1.5F, argb(90.0F * f, i));
       }
    }
 

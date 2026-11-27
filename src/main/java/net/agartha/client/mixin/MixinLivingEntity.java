@@ -1,8 +1,8 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.t;
-import net.agartha.client.module.impl.render.j;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SwingSpeedModule;
+import net.agartha.client.module.impl.render.JumpRingsModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -22,7 +22,7 @@ public abstract class MixinLivingEntity {
       cancellable = true
    )
    private void agartha$modifySwingDuration(CallbackInfoReturnable<Integer> callbackInfoReturnable) {
-      t var2 = e.get(t.class);
+      SwingSpeedModule var2 = ModuleManager.get(SwingSpeedModule.class);
       if (var2 != null && var2.isEnabled()) {
          if ((Object)this == MinecraftClient.getInstance().player) {
             callbackInfoReturnable.setReturnValue(var2.getModifiedSwingDuration((Integer)callbackInfoReturnable.getReturnValue()));
@@ -36,7 +36,7 @@ public abstract class MixinLivingEntity {
    )
    private void agartha$onJumpFromGround(CallbackInfo callbackInfo) {
       if ((Object)this == MinecraftClient.getInstance().player) {
-         j var2 = e.get(j.class);
+         JumpRingsModule var2 = ModuleManager.get(JumpRingsModule.class);
          if (var2 != null && var2.isEnabled()) {
             var2.onJump((LivingEntity)(Object)this);
          }

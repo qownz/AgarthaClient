@@ -6,18 +6,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.aj;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.f;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.ab;
-import net.agartha.client.util.ad;
-import net.agartha.client.util.af;
-import net.agartha.client.util.i;
-import net.agartha.client.util.l;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationManager;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.TracerOverlay;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.render.EntityVisibility;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.render.OffscreenIndicator;
+import net.agartha.client.util.world.ViewDistance;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -30,17 +32,17 @@ import net.minecraft.world.debug.gizmo.GizmoDrawing;
 import net.minecraft.world.debug.gizmo.VisibilityConfigurable;
 
 @Environment(EnvType.CLIENT)
-public final class SusEspModule extends b implements f {
+public final class SusEspModule extends Module implements TracerOverlay {
    private static final int CACHE_RADIUS = 96;
    private static final int TRADER_COLOR = -16738561;
    private static final int LLAMA_COLOR = -16728065;
    private static final float LINE_WIDTH = 1.5F;
-   private final net.agartha.client.module.a_pkg.b sWanderingEsp = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Wandering ESP", true)
+   private final BooleanSetting sWanderingEsp = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Wandering ESP", true)
    );
-   private final net.agartha.client.module.a_pkg.b sLlamaEsp = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Llama ESP", true));
-   private final net.agartha.client.module.a_pkg.b sTracers = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Tracers", false));
-   private final j sAlpha = (j)this.addSetting(new j("Alpha", 140.0F, 0.0F, 255.0F));
+   private final BooleanSetting sLlamaEsp = (BooleanSetting)this.addSetting(new BooleanSetting("Llama ESP", true));
+   private final BooleanSetting sTracers = (BooleanSetting)this.addSetting(new BooleanSetting("Tracers", false));
+   private final NumberSetting sAlpha = (NumberSetting)this.addSetting(new NumberSetting("Alpha", 140.0F, 0.0F, 255.0F));
    private final Set<UUID> detectedTraders = new HashSet<>();
    private final Set<UUID> detectedLlamas = new HashSet<>();
    private final Set<UUID> notifiedTraders = new HashSet<>();
@@ -48,7 +50,7 @@ public final class SusEspModule extends b implements f {
    private final Map<UUID, Entity> entityByUuid = new HashMap<>();
 
    public SusEspModule() {
-      super("Sus ESP", "Detects wandering traders and trader llamas.", c.DONUT);
+      super("Sus ESP", "Detects wandering traders and trader llamas.", ModuleCategory.DONUT);
    }
 
    protected void onEnable() {
@@ -59,16 +61,16 @@ public final class SusEspModule extends b implements f {
       this.clearState();
    }
 
-   @net.agartha.client.d.f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          this.scanEntities(var2);
       }
    }
 
-   @net.agartha.client.d.f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          int var3 = clampAlpha(this.sAlpha.getInt());
@@ -104,15 +106,15 @@ public final class SusEspModule extends b implements f {
          if (var4.world != null && var4.player != null) {
             float var5 = var4.getRenderTickCounter().getTickProgress(false);
             Vec3d var6 = var4.player.getCameraPosVec(var5);
-            float var7 = ad.originX(f);
-            float var8 = ad.originY("Crosshair", g);
-            double var9 = af.blocks();
+            float var7 = OffscreenIndicator.originX(f);
+            float var8 = OffscreenIndicator.originY("Crosshair", g);
+            double var9 = ViewDistance.blocks();
             if (this.sWanderingEsp.get()) {
                for (UUID var12 : this.detectedTraders) {
                   Entity var13 = this.findEntityByUuid(var4, var12);
                   if (marked(var4, var13, var5)) {
                      Vec3d var14 = centerOf(interpolatedBox(var13, var5));
-                     ad.drawWithFade(imDrawList, var4, f, g, var7, var8, var14, -16738561, 1.5F, var6, var9);
+                     OffscreenIndicator.drawWithFade(imDrawList, var4, f, g, var7, var8, var14, -16738561, 1.5F, var6, var9);
                   }
                }
             }
@@ -122,7 +124,7 @@ public final class SusEspModule extends b implements f {
                   Entity var17 = this.findEntityByUuid(var4, var16);
                   if (marked(var4, var17, var5)) {
                      Vec3d var18 = centerOf(interpolatedBox(var17, var5));
-                     ad.drawWithFade(imDrawList, var4, f, g, var7, var8, var18, -16728065, 1.5F, var6, var9);
+                     OffscreenIndicator.drawWithFade(imDrawList, var4, f, g, var7, var8, var18, -16728065, 1.5F, var6, var9);
                   }
                }
             }
@@ -132,9 +134,9 @@ public final class SusEspModule extends b implements f {
 
    private static boolean marked(MinecraftClient minecraftClient, Entity entity, float f) {
       if (entity != null && minecraftClient.player != null) {
-         double var3 = af.blocks();
+         double var3 = ViewDistance.blocks();
          Vec3d var5 = minecraftClient.player.getCameraPosVec(f);
-         return entity.getLerpedPos(f).squaredDistanceTo(var5) <= var3 * var3 && i.drawnByGame(entity);
+         return entity.getLerpedPos(f).squaredDistanceTo(var5) <= var3 * var3 && EntityVisibility.drawnByGame(entity);
       } else {
          return false;
       }
@@ -176,12 +178,12 @@ public final class SusEspModule extends b implements f {
    }
 
    private void notify(MinecraftClient minecraftClient, String string, String string2) {
-      ab.send(string, string2);
-      aj.getInstance().pushAlert(string + " — " + string2);
+      ChatSender.send(string, string2);
+      NotificationManager.getInstance().pushAlert(string + " — " + string2);
    }
 
    private static void drawBox(Box box, int i, int j) {
-      if (net.agartha.client.util.l.isSafeCuboid(box)) {
+      if (FrustumCulling.isSafeCuboid(box)) {
          VisibilityConfigurable var3 = GizmoDrawing.box(box, DrawStyle.filledAndStroked(i, 1.5F, j));
          var3.ignoreOcclusion();
       }

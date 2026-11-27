@@ -1,10 +1,10 @@
 package net.agartha.client.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.k;
-import net.agartha.client.module.impl.misc.v;
-import net.agartha.client.module.impl.render.d;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.FreecamModule;
+import net.agartha.client.module.impl.misc.ZoomModule;
+import net.agartha.client.module.impl.render.FreelookModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -26,7 +26,7 @@ public abstract class MixinZoomGameRenderer {
    private float agartha$zoomFov(float f, Camera camera, float g, boolean bl) {
       MinecraftClient var5 = MinecraftClient.getInstance();
       if (var5.world != null && var5.player != null) {
-         v var6 = e.get(v.class);
+         ZoomModule var6 = ModuleManager.get(ZoomModule.class);
          if (var6 == null || !var6.isZoomActive()) {
             return f;
          } else {
@@ -43,12 +43,12 @@ public abstract class MixinZoomGameRenderer {
       cancellable = true
    )
    private void agartha$hideHandsWhileZooming(float f, boolean bl, Matrix4f matrix4f, CallbackInfo callbackInfo) {
-      v var5 = e.get(v.class);
+      ZoomModule var5 = ModuleManager.get(ZoomModule.class);
       if (var5 != null && var5.isZooming() && !var5.affectHandFov()) {
          callbackInfo.cancel();
       } else {
-         k var6 = e.get(k.class);
-         d var7 = e.get(d.class);
+         FreecamModule var6 = ModuleManager.get(FreecamModule.class);
+         FreelookModule var7 = ModuleManager.get(FreelookModule.class);
          if (var6 != null && var6.isEnabled() || var7 != null && var7.isEnabled()) {
             callbackInfo.cancel();
          }

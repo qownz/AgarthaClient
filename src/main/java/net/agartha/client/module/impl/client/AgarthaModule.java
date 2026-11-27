@@ -1,86 +1,91 @@
 package net.agartha.client.module.impl.client;
 
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.a_pkg.a_o;
-import net.agartha.client.d.f;
-import net.agartha.client.e.k;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.g;
-import net.agartha.client.module.a_pkg.i;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.module.a_pkg.l;
-import net.agartha.client.util.ab;
+import net.agartha.client.config.ConfigResetService;
+import net.agartha.client.core.CommandHandler;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.EventPriority;
+import net.agartha.client.event.impl.ChatSendEvent;
+import net.agartha.client.gui.DrawUtils;
+import net.agartha.client.gui.Theme;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.EnumSetting;
+import net.agartha.client.module.setting.KeybindSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.module.setting.StringSetting;
+import net.agartha.client.util.net.ChatSender;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
 @Environment(EnvType.CLIENT)
-public final class AgarthaModule extends b {
+public final class AgarthaModule extends Module {
    public static final String ANIM_LEFT_TO_RIGHT = "Left to Right";
    public static final String ANIM_RIGHT_TO_LEFT = "Right to Left";
    public static final String ANIM_TOP_TO_BOTTOM = "Top to Bottom";
    public static final String ANIM_BOTTOM_TO_TOP = "Bottom to Top";
-   private final i sTheme = (i)this.addSetting(
-      new i("Theme", k.WHITE.displayName(), new String[]{"White", "Green", "Red", "Blue", "Pink", "Purple"}).alias("Turquoise", "Blue")
+   private final EnumSetting sTheme = (EnumSetting)this.addSetting(
+      new EnumSetting("Theme", Theme.WHITE.displayName(), new String[]{"White", "Green", "Red", "Blue", "Pink", "Purple"}).alias("Turquoise", "Blue")
    );
    public static final String STYLE_SHARP = "Sharp";
    public static final String STYLE_SMOOTH = "Smooth";
-   private final i sStyle = (i)this.addSetting(new i("Style", "Smooth", new String[]{"Smooth", "Sharp"}));
-   private final net.agartha.client.module.a_pkg.b sThemeFill = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Fill With Theme", false)
+   private final EnumSetting sStyle = (EnumSetting)this.addSetting(new EnumSetting("Style", "Smooth", new String[]{"Smooth", "Sharp"}));
+   private final BooleanSetting sThemeFill = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Fill With Theme", false)
    );
-   private final net.agartha.client.module.a_pkg.b sMenuAnimation = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Menu Animation", true)
+   private final BooleanSetting sMenuAnimation = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Menu Animation", true)
    );
-   private final i sAnimation = (i)this.addSetting(
-      new i("Animation", "Left to Right", new String[]{"Top to Bottom", "Left to Right", "Right to Left", "Bottom to Top"})
+   private final EnumSetting sAnimation = (EnumSetting)this.addSetting(
+      new EnumSetting("Animation", "Left to Right", new String[]{"Top to Bottom", "Left to Right", "Right to Left", "Bottom to Top"})
    );
-   private final net.agartha.client.module.a_pkg.b sMenuBackground = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Menu Background", false)
+   private final BooleanSetting sMenuBackground = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Menu Background", false)
    );
-   private final net.agartha.client.module.a_pkg.b sMenuParticles = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Menu Particles", true)
+   private final BooleanSetting sMenuParticles = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Menu Particles", true)
    );
-   private final net.agartha.client.module.a_pkg.b sUiSounds = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("UI Sounds (Experimental)", true)
+   private final BooleanSetting sUiSounds = (BooleanSetting)this.addSetting(
+      new BooleanSetting("UI Sounds (Experimental)", true)
    );
-   private final j sUiSoundVolume = (j)this.addSetting(new j("UI Sound Volume", 0.6F, 0.0F, 1.0F));
-   private final net.agartha.client.module.a_pkg.b sLockClickGui = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Lock Click GUI", false)
+   private final NumberSetting sUiSoundVolume = (NumberSetting)this.addSetting(new NumberSetting("UI Sound Volume", 0.6F, 0.0F, 1.0F));
+   private final BooleanSetting sLockClickGui = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Lock Click GUI", false)
    );
-   private final j sGuiOpacity = (j)this.addSetting(new j("GUI Opacity", 1.0F, 0.15F, 1.0F));
-   private final l sChatPrefix = (l)this.addSetting(new l("Chat Prefix", "--"));
-   private final g sClickGuiKey = (g)this.addSetting(new g("Click GUI", 344));
+   private final NumberSetting sGuiOpacity = (NumberSetting)this.addSetting(new NumberSetting("GUI Opacity", 1.0F, 0.15F, 1.0F));
+   private final StringSetting sChatPrefix = (StringSetting)this.addSetting(new StringSetting("Chat Prefix", "--"));
+   private final KeybindSetting sClickGuiKey = (KeybindSetting)this.addSetting(new KeybindSetting("Click GUI", 344));
 
    public AgarthaModule() {
-      super("Agartha", "Client identity, theme, and global reset controls.", c.CLIENT);
+      super("Agartha", "Client identity, theme, and global reset controls.", ModuleCategory.CLIENT);
       this.setEnabled(true);
       this.sAnimation.visibleWhen(this.sMenuAnimation::get);
       this.sUiSoundVolume.visibleWhen(this.sUiSounds::get);
       this.sStyle.onChange(this::applyStyle);
       this.applyStyle();
-      this.sThemeFill.onChange(() -> net.agartha.client.e.c.setThemeFill(this.sThemeFill.get()));
-      net.agartha.client.e.c.setThemeFill(this.sThemeFill.get());
+      this.sThemeFill.onChange(() -> DrawUtils.setThemeFill(this.sThemeFill.get()));
+      DrawUtils.setThemeFill(this.sThemeFill.get());
    }
 
    private void applyStyle() {
-      net.agartha.client.e.c.setStyle(this.sStyle.is("Sharp") ? 0 : 1);
+      DrawUtils.setStyle(this.sStyle.is("Sharp") ? 0 : 1);
    }
 
-   public net.agartha.client.module.a_pkg.b uiSounds() {
+   public BooleanSetting uiSounds() {
       return this.sUiSounds;
    }
 
-   public j uiSoundVolume() {
+   public NumberSetting uiSoundVolume() {
       return this.sUiSoundVolume;
    }
 
-   public net.agartha.client.module.a_pkg.b menuBackground() {
+   public BooleanSetting menuBackground() {
       return this.sMenuBackground;
    }
 
-   public net.agartha.client.module.a_pkg.b menuParticles() {
+   public BooleanSetting menuParticles() {
       return this.sMenuParticles;
    }
 
@@ -88,19 +93,19 @@ public final class AgarthaModule extends b {
       return true;
    }
 
-   public i theme() {
+   public EnumSetting theme() {
       return this.sTheme;
    }
 
-   public net.agartha.client.module.a_pkg.b menuAnimation() {
+   public BooleanSetting menuAnimation() {
       return this.sMenuAnimation;
    }
 
-   public net.agartha.client.module.a_pkg.b lockClickGui() {
+   public BooleanSetting lockClickGui() {
       return this.sLockClickGui;
    }
 
-   public g clickGuiKeySetting() {
+   public KeybindSetting clickGuiKeySetting() {
       return this.sClickGuiKey;
    }
 
@@ -131,16 +136,16 @@ public final class AgarthaModule extends b {
       }
    }
 
-   @f(
-      priority = net.agartha.client.d.i.HIGHEST
+   @EventListener(
+      priority = EventPriority.HIGHEST
    )
-   public void onChatSend(net.agartha.client.d.a_pkg.b arg) {
-      if (a_o.handle(arg.message, this.chatPrefix())) {
+   public void onChatSend(ChatSendEvent arg) {
+      if (CommandHandler.handle(arg.message, this.chatPrefix())) {
          arg.setCancelled(true);
       }
    }
 
-   public i animation() {
+   public EnumSetting animation() {
       return this.sAnimation;
    }
 
@@ -148,20 +153,20 @@ public final class AgarthaModule extends b {
       MinecraftClient var1 = MinecraftClient.getInstance();
       var1.execute(() -> {
          try {
-            net.agartha.client.c.a.resetAll(var1);
+            ConfigResetService.resetAll(var1);
             if (var1.player != null) {
-               ab.send("Client reset to defaults.");
+               ChatSender.send("Client reset to defaults.");
             }
          } catch (Throwable var2) {
             AgarthaClientMod.LOGGER.error("[Agartha] Reset Client failed — mod jar may be corrupt. Close the game, redeploy, restart.", var2);
             if (var1.player != null) {
-               ab.send("Reset failed. Close game, redeploy jar, restart.");
+               ChatSender.send("Reset failed. Close game, redeploy jar, restart.");
             }
          }
       });
    }
 
    static {
-      net.agartha.client.c.a.class.getName();
+      ConfigResetService.class.getName();
    }
 }

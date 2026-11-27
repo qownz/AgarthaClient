@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Environment(EnvType.CLIENT)
 @Mixin({InGameOverlayRenderer.class})
 public abstract class MixinNoRenderScreenEffect {
-   private static m noRender() {
-      return e.get(m.class);
+   private static NoRenderModule noRender() {
+      return ModuleManager.get(NoRenderModule.class);
    }
 
    @Inject(
@@ -27,7 +27,7 @@ public abstract class MixinNoRenderScreenEffect {
       cancellable = true
    )
    private static void agartha$noFire(MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, Sprite sprite, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noFireOverlay()) {
          callbackInfo.cancel();
       }
@@ -41,7 +41,7 @@ public abstract class MixinNoRenderScreenEffect {
    private static void agartha$noWater(
       MinecraftClient minecraftClient, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, CallbackInfo callbackInfo
    ) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noLiquidOverlay()) {
          callbackInfo.cancel();
       }
@@ -53,7 +53,7 @@ public abstract class MixinNoRenderScreenEffect {
       cancellable = true
    )
    private static void agartha$noInWall(Sprite sprite, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noInWallOverlay()) {
          callbackInfo.cancel();
       }

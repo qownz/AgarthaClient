@@ -12,17 +12,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.a_o;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.OreSim;
-import net.agartha.client.util.ab;
-import net.agartha.client.util.h;
-import net.agartha.client.util.k;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BlockColorSetting;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.net.ServerCheck;
+import net.agartha.client.util.render.GizmoBatch;
+import net.agartha.client.util.world.OreSim;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
@@ -43,7 +44,7 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.WorldChunk;
 
 @Environment(EnvType.CLIENT)
-public final class SeedXrayModule extends b {
+public final class SeedXrayModule extends Module {
    private static final long SEED = 6608149111735331168L;
    private static final String TAG = "Seed X-Ray";
    private static final int OLD_BORDER = 175000;
@@ -51,17 +52,17 @@ public final class SeedXrayModule extends b {
    private static final int WORK_TICKS = 5;
    private static final int REBUILD_TICKS = 10;
    private static final int CHUNKS_PER_JOB = 6;
-   private final a_o sOres = (a_o)this.addSetting(a_o.createForSeedOres());
-   private final j sRadius = (j)this.addSetting(new j("Radius (chunks)", 8.0F, 1.0F, 32.0F).whole());
-   private final j sRange = (j)this.addSetting(new j("Render Distance", 64.0F, 8.0F, 256.0F).whole());
-   private final j sMaxBoxes = (j)this.addSetting(new j("Max Boxes", 3000.0F, 100.0F, 20000.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sHideMined = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Hide Mined", true)
+   private final BlockColorSetting sOres = (BlockColorSetting)this.addSetting(BlockColorSetting.createForSeedOres());
+   private final NumberSetting sRadius = (NumberSetting)this.addSetting(new NumberSetting("Radius (chunks)", 8.0F, 1.0F, 32.0F).whole());
+   private final NumberSetting sRange = (NumberSetting)this.addSetting(new NumberSetting("Render Distance", 64.0F, 8.0F, 256.0F).whole());
+   private final NumberSetting sMaxBoxes = (NumberSetting)this.addSetting(new NumberSetting("Max Boxes", 3000.0F, 100.0F, 20000.0F).whole());
+   private final BooleanSetting sHideMined = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Hide Mined", true)
    );
-   private final net.agartha.client.module.a_pkg.b sOldArea = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Inside Old Border", false)
+   private final BooleanSetting sOldArea = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Inside Old Border", false)
    );
-   private final j sFillAlpha = (j)this.addSetting(new j("Fill Alpha", 0.18F, 0.0F, 1.0F));
+   private final NumberSetting sFillAlpha = (NumberSetting)this.addSetting(new NumberSetting("Fill Alpha", 0.18F, 0.0F, 1.0F));
    private final Map<Long, Map<Block, int[]>> ores = new ConcurrentHashMap<>();
    private final AtomicBoolean simBusy = new AtomicBoolean();
    private final AtomicBoolean rebuildBusy = new AtomicBoolean();
@@ -76,7 +77,7 @@ public final class SeedXrayModule extends b {
    private volatile SeedXrayModule.Shown shown = NOTHING;
 
    public SeedXrayModule() {
-      super("Seed X-Ray", "Shows DonutSMP ores through the rock.", c.DONUT);
+      super("Seed X-Ray", "Shows DonutSMP ores through the rock.", ModuleCategory.DONUT);
    }
 
    protected void onEnable() {
@@ -90,7 +91,7 @@ public final class SeedXrayModule extends b {
          try {
             OreSim.load();
          } catch (LinkageError | Exception var1) {
-            MinecraftClient.getInstance().execute(() -> ab.send("Seed X-Ray", "Could not start: " + var1));
+            MinecraftClient.getInstance().execute(() -> ChatSender.send("Seed X-Ray", "Could not start: " + var1));
          }
       });
       this.reset();
@@ -114,14 +115,14 @@ public final class SeedXrayModule extends b {
       this.dimension = "";
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null && this.worker != null && OreSim.ready()) {
-         if (!h.connected()) {
+         if (!ServerCheck.connected()) {
             if (!this.warnedNotDonut) {
                this.warnedNotDonut = true;
-               ab.send("Seed X-Ray", "Only works on DonutSMP: the seed is Donut's.");
+               ChatSender.send("Seed X-Ray", "Only works on DonutSMP: the seed is Donut's.");
             }
 
             this.shown = NOTHING;
@@ -160,7 +161,7 @@ public final class SeedXrayModule extends b {
    private Set<Block> oreBlocks() {
       Set var1 = Collections.newSetFromMap(new IdentityHashMap());
 
-      for (net.agartha.client.module.a_pkg.a_o.a var3 : this.sOres.entries()) {
+      for (BlockColorSetting.a var3 : this.sOres.entries()) {
          Identifier var4 = Identifier.tryParse(var3.id());
          if (var4 != null) {
             Registries.BLOCK.getOptionalValue(var4).ifPresent(var1::add);
@@ -344,15 +345,15 @@ public final class SeedXrayModule extends b {
       return new SeedXrayModule.Shown(var43, var44, var45);
    }
 
-   @f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       SeedXrayModule.Shown var2 = this.shown;
       int var3 = Math.round(this.sFillAlpha.get() * 255.0F);
 
       for (int var4 = 0; var4 < var2.pos().length; var4++) {
          int var5 = var2.color()[var4];
          Integer var6 = var3 > 0 ? var5 & 16777215 | var3 << 24 : null;
-         k.submitCuboid(var2.pos()[var4], var2.box()[var4], var5, 1.0F, var6, true);
+         GizmoBatch.submitCuboid(var2.pos()[var4], var2.box()[var4], var5, 1.0F, var6, true);
       }
    }
 

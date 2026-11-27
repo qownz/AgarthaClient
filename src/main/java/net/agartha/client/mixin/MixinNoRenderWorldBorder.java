@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.WorldBorderRendering;
@@ -24,7 +24,7 @@ public abstract class MixinNoRenderWorldBorder {
    private void agartha$noWorldBorder(
       WorldBorder worldBorder, float f, Vec3d vec3d, double d, WorldBorderRenderState worldBorderRenderState, CallbackInfo callbackInfo
    ) {
-      m var8 = e.get(m.class);
+      NoRenderModule var8 = ModuleManager.get(NoRenderModule.class);
       if (var8 != null && var8.noWorldBorder()) {
          worldBorderRenderState.alpha = 0.0;
          callbackInfo.cancel();

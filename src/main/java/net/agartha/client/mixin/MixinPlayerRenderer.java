@@ -1,8 +1,8 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.o;
-import net.agartha.client.module.impl.render.l;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SkinChangeModule;
+import net.agartha.client.module.impl.render.NametagsModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
@@ -26,7 +26,7 @@ public abstract class MixinPlayerRenderer {
       at = {@At("TAIL")}
    )
    private void agartha$injectSkin(PlayerLikeEntity playerLikeEntity, PlayerEntityRenderState playerEntityRenderState, float f, CallbackInfo callbackInfo) {
-      o var5 = e.get(o.class);
+      SkinChangeModule var5 = ModuleManager.get(SkinChangeModule.class);
       if (var5 != null && var5.isEnabled()) {
          TextureAsset var6 = var5.getSkinTextureFor(playerEntityRenderState.id);
          if (var6 != null) {
@@ -53,7 +53,7 @@ public abstract class MixinPlayerRenderer {
       CameraRenderState cameraRenderState,
       CallbackInfo callbackInfo
    ) {
-      if (l.hideVanillaNametags()) {
+      if (NametagsModule.hideVanillaNametags()) {
          callbackInfo.cancel();
       }
    }

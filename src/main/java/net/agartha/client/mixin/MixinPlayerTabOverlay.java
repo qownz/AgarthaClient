@@ -2,8 +2,8 @@ package net.agartha.client.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.agartha.client.util.aa;
-import net.agartha.client.util.z;
+import net.agartha.client.util.render.TabFooter;
+import net.agartha.client.util.render.TabOverlayBounds;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
@@ -24,7 +24,7 @@ public abstract class MixinPlayerTabOverlay {
       argsOnly = true
    )
    private Text agartha$footer(Text text) {
-      return aa.accept(text);
+      return TabFooter.accept(text);
    }
 
    @Inject(
@@ -32,7 +32,7 @@ public abstract class MixinPlayerTabOverlay {
       at = {@At("HEAD")}
    )
    private void agartha$tabBegin(CallbackInfo callbackInfo) {
-      z.begin();
+      TabOverlayBounds.begin();
    }
 
    @WrapOperation(
@@ -44,7 +44,7 @@ public abstract class MixinPlayerTabOverlay {
    )
    private void agartha$tabPanel(DrawContext drawContext, int i, int j, int k, int l, int m, Operation<Void> operation) {
       if (m == Integer.MIN_VALUE) {
-         z.panel(i, j, k, l);
+         TabOverlayBounds.panel(i, j, k, l);
       }
 
       operation.call(new Object[]{drawContext, i, j, k, l, m});
@@ -55,6 +55,6 @@ public abstract class MixinPlayerTabOverlay {
       at = {@At("RETURN")}
    )
    private void agartha$tabEnd(CallbackInfo callbackInfo) {
-      z.end();
+      TabOverlayBounds.end();
    }
 }

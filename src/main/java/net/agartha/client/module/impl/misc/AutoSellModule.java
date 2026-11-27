@@ -2,14 +2,16 @@ package net.agartha.client.module.impl.misc;
 
 import java.util.Random;
 import net.agartha.client.AgarthaClientMod;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.aj;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.module.a_pkg.e;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.ab;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationManager;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ItemIdListSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.net.MoneyCommandGuard;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -21,7 +23,7 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 
 @Environment(EnvType.CLIENT)
-public final class AutoSellModule extends b {
+public final class AutoSellModule extends Module {
    private static final String NAME = "Auto Sell";
    private static final int SELLABLE_SLOTS = 36;
    private static final int SELL_BUTTON = 53;
@@ -33,16 +35,16 @@ public final class AutoSellModule extends b {
    private static final long RESYNC_REOPEN_MS = 500L;
    private static final int RESYNC_AFTER = 2;
    private static final Random PACE = new Random();
-   private final e sKeep = (e)this.addSetting(new e("Keep Items", new String[]{"minecraft:elytra", "minecraft:netherite_pickaxe", "minecraft:netherite_sword"}));
-   private final j sMoveDelay = (j)this.addSetting(new j("Move Delay (ms)", 90.0F, 30.0F, 500.0F).whole());
-   private final j sSellDelay = (j)this.addSetting(new j("Sell Delay (ms)", 400.0F, 150.0F, 2000.0F).whole());
-   private final j sBatch = (j)this.addSetting(new j("Stacks Per Sell", 36.0F, 1.0F, 45.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sStopWhenClosed = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Stop When Closed", true)
+   private final ItemIdListSetting sKeep = (ItemIdListSetting)this.addSetting(new ItemIdListSetting("Keep Items", new String[]{"minecraft:elytra", "minecraft:netherite_pickaxe", "minecraft:netherite_sword"}));
+   private final NumberSetting sMoveDelay = (NumberSetting)this.addSetting(new NumberSetting("Move Delay (ms)", 90.0F, 30.0F, 500.0F).whole());
+   private final NumberSetting sSellDelay = (NumberSetting)this.addSetting(new NumberSetting("Sell Delay (ms)", 400.0F, 150.0F, 2000.0F).whole());
+   private final NumberSetting sBatch = (NumberSetting)this.addSetting(new NumberSetting("Stacks Per Sell", 36.0F, 1.0F, 45.0F).whole());
+   private final BooleanSetting sStopWhenClosed = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Stop When Closed", true)
    );
-   private final j sReopenDelay = (j)this.addSetting(new j("Reopen Delay (s)", 3.0F, 1.0F, 30.0F).whole());
-   private final net.agartha.client.module.a_pkg.b sDebugChat = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Debug Chat", false)
+   private final NumberSetting sReopenDelay = (NumberSetting)this.addSetting(new NumberSetting("Reopen Delay (s)", 3.0F, 1.0F, 30.0F).whole());
+   private final BooleanSetting sDebugChat = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Debug Chat", false)
    );
    private AutoSellModule.a step = AutoSellModule.a.FILL;
    private int menuId = -1;
@@ -60,7 +62,7 @@ public final class AutoSellModule extends b {
    private boolean alerted;
 
    public AutoSellModule() {
-      super("Auto Sell", "Sells your inventory through /sell, keeping the items you pick.", c.DONUT);
+      super("Auto Sell", "Sells your inventory through /sell, keeping the items you pick.", ModuleCategory.DONUT);
       this.sReopenDelay.visibleWhen(() -> !this.sStopWhenClosed.get());
    }
 
@@ -95,8 +97,8 @@ public final class AutoSellModule extends b {
       this.debug("Stopped after " + this.sells + " sell(s), " + this.itemsSold + " item(s).");
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientPlayerEntity var3 = var2.player;
       if (var3 != null && var2.getNetworkHandler() != null && var2.interactionManager != null && !var3.isDead()) {
@@ -167,7 +169,7 @@ public final class AutoSellModule extends b {
 
    private void openMenu(MinecraftClient minecraftClient, ClientPlayerEntity clientPlayerEntity, long l) {
       if (minecraftClient.currentScreen == null && l >= this.reopenAt && l - this.lastCommand >= 1000L) {
-         if (net.agartha.client.util.f.allowAutomated("/sell", "Auto Sell")) {
+         if (MoneyCommandGuard.allowAutomated("/sell", "Auto Sell")) {
             clientPlayerEntity.networkHandler.sendChatCommand("sell");
             this.lastCommand = l;
             this.opening = l + 10000L;
@@ -278,13 +280,13 @@ public final class AutoSellModule extends b {
    }
 
    private static void alert(String string) {
-      aj.getInstance().pushAlert("Auto Sell: " + string);
+      NotificationManager.getInstance().pushAlert("Auto Sell: " + string);
       AgarthaClientMod.LOGGER.warn("[{}] {}", "Auto Sell", string);
    }
 
    private void debug(String string) {
       if (this.sDebugChat.get()) {
-         ab.send("Auto Sell", string);
+         ChatSender.send("Auto Sell", string);
          AgarthaClientMod.LOGGER.info("[{}] {}", "Auto Sell", string);
       }
    }

@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
@@ -18,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Environment(EnvType.CLIENT)
 @Mixin({InGameHud.class})
 public abstract class MixinNoRenderGui {
-   private static m noRender() {
-      return e.get(m.class);
+   private static NoRenderModule noRender() {
+      return ModuleManager.get(NoRenderModule.class);
    }
 
    @Inject(
@@ -28,7 +28,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noCrosshair(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noCrosshair()) {
          callbackInfo.cancel();
       }
@@ -40,7 +40,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noScoreboardDisplay(DrawContext drawContext, ScoreboardObjective scoreboardObjective, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noScoreboard()) {
          callbackInfo.cancel();
       }
@@ -52,7 +52,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noScoreboard(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noScoreboard()) {
          callbackInfo.cancel();
       }
@@ -64,7 +64,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noTitle(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noTitle()) {
          callbackInfo.cancel();
       }
@@ -76,7 +76,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noVignette(DrawContext drawContext, Entity entity, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noVignette()) {
          callbackInfo.cancel();
       }
@@ -88,7 +88,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noPortal(DrawContext drawContext, float f, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noPortalOverlay()) {
          callbackInfo.cancel();
       }
@@ -100,7 +100,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noSpyglass(DrawContext drawContext, float f, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noSpyglassOverlay()) {
          callbackInfo.cancel();
       }
@@ -112,7 +112,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noNausea(DrawContext drawContext, float f, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noNausea()) {
          callbackInfo.cancel();
       }
@@ -124,7 +124,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noHeldItemName(DrawContext drawContext, CallbackInfo callbackInfo) {
-      m var3 = noRender();
+      NoRenderModule var3 = noRender();
       if (var3 != null && var3.noHeldItemName()) {
          callbackInfo.cancel();
       }
@@ -136,7 +136,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noPotionIcons(DrawContext drawContext, RenderTickCounter renderTickCounter, CallbackInfo callbackInfo) {
-      m var4 = noRender();
+      NoRenderModule var4 = noRender();
       if (var4 != null && var4.noPotionIcons()) {
          callbackInfo.cancel();
       }
@@ -148,7 +148,7 @@ public abstract class MixinNoRenderGui {
       cancellable = true
    )
    private void agartha$noTextureOverlays(DrawContext drawContext, Identifier identifier, float f, CallbackInfo callbackInfo) {
-      m var5 = noRender();
+      NoRenderModule var5 = noRender();
       if (var5 != null) {
          String var6 = identifier.getPath();
          if (var5.noPumpkinOverlay() && var6.contains("pumpkin")) {

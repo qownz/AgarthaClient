@@ -7,18 +7,21 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.e;
-import net.agartha.client.module.f;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.ac;
-import net.agartha.client.util.ad;
-import net.agartha.client.util.af;
-import net.agartha.client.util.i;
-import net.agartha.client.util.l;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.TracerOverlay;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.color.ColorSettingWiring;
+import net.agartha.client.util.render.EntityVisibility;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.render.OffscreenIndicator;
+import net.agartha.client.util.world.ViewDistance;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -38,7 +41,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.debug.gizmo.GizmoDrawing;
 
 @Environment(EnvType.CLIENT)
-public final class NetheriteFinderModule extends b implements f {
+public final class NetheriteFinderModule extends Module implements TracerOverlay {
    private static final float TRACER_WIDTH = 1.5F;
    private static final int SCAN_INTERVAL_TICKS = 20;
    private static final int DEFAULT_COLOR = -4302081;
@@ -46,28 +49,28 @@ public final class NetheriteFinderModule extends b implements f {
    private static final float SECTION_LINE_WIDTH = 1.0F;
    private static final int EXACT_FILL_ALPHA = 60;
    private static final long PULSE_PERIOD_MS = 2000L;
-   private final net.agartha.client.module.a_pkg.b sSectionHints = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Section Hints", true)
+   private final BooleanSetting sSectionHints = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Section Hints", true)
    );
-   private final net.agartha.client.module.a_pkg.b sItemEsp = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Item ESP", true));
-   private final net.agartha.client.module.a_pkg.b sPulse = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Pulse", true));
-   private final net.agartha.client.module.a_pkg.b sTracers = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Tracers", false));
-   private final j sMaxShown = (j)this.addSetting(new j("Max Shown", 100.0F, 1.0F, 1000.0F));
-   private final net.agartha.client.module.a_pkg.b sCustomColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Custom Color", false)
+   private final BooleanSetting sItemEsp = (BooleanSetting)this.addSetting(new BooleanSetting("Item ESP", true));
+   private final BooleanSetting sPulse = (BooleanSetting)this.addSetting(new BooleanSetting("Pulse", true));
+   private final BooleanSetting sTracers = (BooleanSetting)this.addSetting(new BooleanSetting("Tracers", false));
+   private final NumberSetting sMaxShown = (NumberSetting)this.addSetting(new NumberSetting("Max Shown", 100.0F, 1.0F, 1000.0F));
+   private final BooleanSetting sCustomColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Custom Color", false)
    );
-   private final net.agartha.client.module.a_pkg.b sThemeColor = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Theme Color", true)
+   private final BooleanSetting sThemeColor = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Theme Color", true)
    );
-   private final c sColor = (c)this.addSetting(new c("Color", -4302081));
+   private final ColorSetting sColor = (ColorSetting)this.addSetting(new ColorSetting("Color", -4302081));
    private volatile List<NetheriteFinderModule.Hit> hits = List.of();
    private final AtomicBoolean scanning = new AtomicBoolean();
    private volatile ExecutorService worker;
    private int tickCounter;
 
    public NetheriteFinderModule() {
-      super("Netherite Finder", "Finds ancient debris.", net.agartha.client.module.c.DONUT);
-      ac.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, true);
+      super("Netherite Finder", "Finds ancient debris.", ModuleCategory.DONUT);
+      ColorSettingWiring.wireExclusiveColorSource(this.sCustomColor, this.sThemeColor, this.sColor, true);
    }
 
    protected void onEnable() {
@@ -93,17 +96,17 @@ public final class NetheriteFinderModule extends b implements f {
    }
 
    public static boolean isGlowPathActive() {
-      NetheriteFinderModule var0 = (NetheriteFinderModule)e.get(NetheriteFinderModule.class);
+      NetheriteFinderModule var0 = (NetheriteFinderModule)ModuleManager.get(NetheriteFinderModule.class);
       return var0 != null && var0.isEnabled() && var0.sItemEsp.get();
    }
 
    public static boolean shouldGlow(Entity entity) {
-      NetheriteFinderModule var1 = (NetheriteFinderModule)e.get(NetheriteFinderModule.class);
+      NetheriteFinderModule var1 = (NetheriteFinderModule)ModuleManager.get(NetheriteFinderModule.class);
       return var1 != null && var1.outlines(entity);
    }
 
    public static int glowColor(Entity entity) {
-      NetheriteFinderModule var1 = (NetheriteFinderModule)e.get(NetheriteFinderModule.class);
+      NetheriteFinderModule var1 = (NetheriteFinderModule)ModuleManager.get(NetheriteFinderModule.class);
       return var1 == null ? 16777215 : var1.resolvedColor() & 16777215;
    }
 
@@ -120,8 +123,8 @@ public final class NetheriteFinderModule extends b implements f {
             } else if (var3.getEntityRenderDispatcher().getRenderer(entity) == null) {
                return false;
             } else {
-               double var4 = af.blocks();
-               return var2.getEntityPos().squaredDistanceTo(var3.player.getCameraPosVec(1.0F)) <= var4 * var4 && i.drawnByGame(var2);
+               double var4 = ViewDistance.blocks();
+               return var2.getEntityPos().squaredDistanceTo(var3.player.getCameraPosVec(1.0F)) <= var4 * var4 && EntityVisibility.drawnByGame(var2);
             }
          }
       } else {
@@ -129,8 +132,8 @@ public final class NetheriteFinderModule extends b implements f {
       }
    }
 
-   @net.agartha.client.d.f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       ClientWorld var3 = var2.world;
       if (var3 != null && var2.player != null) {
@@ -153,7 +156,7 @@ public final class NetheriteFinderModule extends b implements f {
    }
 
    private NetheriteFinderModule.ScanRequest collectChunks(MinecraftClient minecraftClient, ClientWorld clientWorld) {
-      int var3 = af.chunks();
+      int var3 = ViewDistance.chunks();
       ChunkPos var4 = minecraftClient.player.getChunkPos();
       ArrayList var5 = new ArrayList();
 
@@ -233,8 +236,8 @@ public final class NetheriteFinderModule extends b implements f {
       return new NetheriteFinderModule.Hit(i, j, k, l, m, n, bl, var8 * var8 + var10 * var10 + var12 * var12);
    }
 
-   @net.agartha.client.d.f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null) {
          List var3 = this.hits;
@@ -242,7 +245,7 @@ public final class NetheriteFinderModule extends b implements f {
             Camera var4 = var2.gameRenderer.getCamera();
             if (var4 != null && var4.isReady()) {
                Vec3d var5 = var4.getCameraPos();
-               double var6 = af.blocksSq();
+               double var6 = ViewDistance.blocksSq();
                int var8 = this.resolvedColor();
                int var9 = withAlpha(var8, 255);
                DrawStyle var10 = DrawStyle.filledAndStroked(var9, 1.5F, withAlpha(var8, this.pulsedAlpha(60)));
@@ -255,9 +258,9 @@ public final class NetheriteFinderModule extends b implements f {
                      break;
                   }
 
-                  if (inRange(var15, var5, var6) && (!var15.exact() || ad.isInFront(var4, center(var15)))) {
+                  if (inRange(var15, var5, var6) && (!var15.exact() || OffscreenIndicator.isInFront(var4, center(var15)))) {
                      Box var16 = var15.box();
-                     if (net.agartha.client.util.l.isSafeCuboid(var16)) {
+                     if (FrustumCulling.isSafeCuboid(var16)) {
                         var13++;
                         GizmoDrawing.box(var16, var15.exact() ? var10 : var11).ignoreOcclusion();
                      }
@@ -269,7 +272,7 @@ public final class NetheriteFinderModule extends b implements f {
    }
 
    private int resolvedColor() {
-      return ac.argb(this.sThemeColor, this.sCustomColor, this.sColor, -4302081);
+      return ColorSettingWiring.argb(this.sThemeColor, this.sCustomColor, this.sColor, -4302081);
    }
 
    private static boolean inRange(NetheriteFinderModule.Hit hit, Vec3d vec3d, double d) {
@@ -306,12 +309,12 @@ public final class NetheriteFinderModule extends b implements f {
       if (this.isTracerOverlayEnabled() && imDrawList != null) {
          MinecraftClient var4 = MinecraftClient.getInstance();
          if (var4.world != null && var4.player != null) {
-            float var5 = ad.originX(f);
-            float var6 = ad.originY("Crosshair", g);
+            float var5 = OffscreenIndicator.originX(f);
+            float var6 = OffscreenIndicator.originY("Crosshair", g);
             int var7 = withAlpha(this.resolvedColor(), 255);
             float var8 = 1.5F;
             Vec3d var9 = var4.player.getCameraPosVec(var4.getRenderTickCounter().getTickProgress(false));
-            double var10 = af.blocksSq();
+            double var10 = ViewDistance.blocksSq();
             int var12 = this.sMaxShown.getInt();
             int var13 = 0;
 
@@ -322,7 +325,7 @@ public final class NetheriteFinderModule extends b implements f {
 
                if (var15.exact() && inRange(var15, var9, var10)) {
                   var13++;
-                  ad.draw(imDrawList, var4, f, g, var5, var6, center(var15), var7, var8);
+                  OffscreenIndicator.draw(imDrawList, var4, f, g, var5, var6, center(var15), var7, var8);
                }
             }
 
@@ -331,7 +334,7 @@ public final class NetheriteFinderModule extends b implements f {
 
                for (Entity var16 : var4.world.getEntities()) {
                   if (this.outlines(var16)) {
-                     ad.draw(imDrawList, var4, f, g, var5, var6, var16.getLerpedPos(var17), var7, var8);
+                     OffscreenIndicator.draw(imDrawList, var4, f, g, var5, var6, var16.getLerpedPos(var17), var7, var8);
                   }
                }
             }

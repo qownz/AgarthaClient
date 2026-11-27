@@ -1,24 +1,25 @@
 package net.agartha.client.module.impl.client;
 
-import net.agartha.client.d.a_pkg.h;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
+import net.agartha.client.event.impl.MouseScrollEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.MathHelper;
 
 @Environment(EnvType.CLIENT)
-public final class UtilitiesModule extends b {
-   private final net.agartha.client.module.a_pkg.b sScreenshotCopy = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Screenshot Copy", false)
+public final class UtilitiesModule extends Module {
+   private final BooleanSetting sScreenshotCopy = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Screenshot Copy", false)
    );
-   private final net.agartha.client.module.a_pkg.b sF5Zoom = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("F5 Zoom", false));
-   private final net.agartha.client.module.a_pkg.b sSmoothF5Zoom = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Smooth F5 Zoom", true)
+   private final BooleanSetting sF5Zoom = (BooleanSetting)this.addSetting(new BooleanSetting("F5 Zoom", false));
+   private final BooleanSetting sSmoothF5Zoom = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Smooth F5 Zoom", true)
    );
-   private final net.agartha.client.module.a_pkg.b sSmoothChat = (net.agartha.client.module.a_pkg.b)this.addSetting(
-      new net.agartha.client.module.a_pkg.b("Smooth Chat", false)
+   private final BooleanSetting sSmoothChat = (BooleanSetting)this.addSetting(
+      new BooleanSetting("Smooth Chat", false)
    );
    private static final float DEFAULT_DISTANCE = 4.0F;
    private static final float MIN_DISTANCE = 1.5F;
@@ -30,13 +31,13 @@ public final class UtilitiesModule extends b {
    private long shownAt;
 
    public UtilitiesModule() {
-      super("Utilities", "Small quality-of-life toggles: screenshot copy, F5 zoom, smooth chat.", c.CLIENT);
+      super("Utilities", "Small quality-of-life toggles: screenshot copy, F5 zoom, smooth chat.", ModuleCategory.CLIENT);
       this.sSmoothF5Zoom.visibleWhen(this.sF5Zoom::get);
    }
 
    protected void onEnable() {
       this.distance = 4.0F;
-      this.on(h.TYPE, this::onScroll);
+      this.on(MouseScrollEvent.TYPE, this::onScroll);
    }
 
    public boolean screenshotCopy() {
@@ -64,7 +65,7 @@ public final class UtilitiesModule extends b {
       return this.shown;
    }
 
-   private void onScroll(h arg) {
+   private void onScroll(MouseScrollEvent arg) {
       if (this.f5Zoom()) {
          MinecraftClient var2 = MinecraftClient.getInstance();
          if (var2.player != null && !var2.options.getPerspective().isFirstPerson()) {

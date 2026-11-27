@@ -1,9 +1,9 @@
 package net.agartha.client.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import net.agartha.client.d.a_pkg.m;
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.q;
+import net.agartha.client.event.impl.PlayerMoveEvent;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.SneakModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -24,7 +24,7 @@ public abstract class MixinLocalPlayer {
       cancellable = true
    )
    private void agartha$onMove(MovementType movementType, Vec3d vec3d, CallbackInfo callbackInfo) {
-      if (m.dispatch(vec3d)) {
+      if (PlayerMoveEvent.dispatch(vec3d)) {
          callbackInfo.cancel();
       }
    }
@@ -38,7 +38,7 @@ public abstract class MixinLocalPlayer {
       )}
    )
    private PlayerInput agartha$sneakPacketInput(PlayerInput playerInput) {
-      q var2 = e.get(q.class);
-      return var2 != null && var2.doPacket() ? q.forceSneak(playerInput) : playerInput;
+      SneakModule var2 = ModuleManager.get(SneakModule.class);
+      return var2 != null && var2.doPacket() ? SneakModule.forceSneak(playerInput) : playerInput;
    }
 }

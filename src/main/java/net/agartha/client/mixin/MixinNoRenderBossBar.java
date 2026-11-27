@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.NoRenderModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
@@ -20,7 +20,7 @@ public abstract class MixinNoRenderBossBar {
       cancellable = true
    )
    private void agartha$noBossBar(DrawContext drawContext, CallbackInfo callbackInfo) {
-      m var3 = e.get(m.class);
+      NoRenderModule var3 = ModuleManager.get(NoRenderModule.class);
       if (var3 != null && var3.noBossBar()) {
          callbackInfo.cancel();
       }

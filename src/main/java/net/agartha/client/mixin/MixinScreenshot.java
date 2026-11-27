@@ -2,7 +2,7 @@ package net.agartha.client.mixin;
 
 import java.io.File;
 import java.util.function.Consumer;
-import net.agartha.client.util.j;
+import net.agartha.client.util.io.ScreenshotCapture;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gl.Framebuffer;
@@ -21,7 +21,7 @@ public class MixinScreenshot {
       cancellable = true
    )
    private static void agartha$deferGrab(File file, Framebuffer framebuffer, Consumer<?> consumer, CallbackInfo callbackInfo) {
-      j.request();
+      ScreenshotCapture.request();
       callbackInfo.cancel();
    }
 }

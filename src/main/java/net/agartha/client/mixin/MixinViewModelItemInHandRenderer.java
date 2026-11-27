@@ -1,7 +1,7 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.render.u;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.ViewModelModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -38,7 +38,7 @@ public abstract class MixinViewModelItemInHandRenderer {
       CallbackInfo callbackInfo
    ) {
       matrixStack.push();
-      u var12 = e.get(u.class);
+      ViewModelModule var12 = ModuleManager.get(ViewModelModule.class);
       if (var12 != null && var12.isEnabled()) {
          boolean var13 = hand == Hand.MAIN_HAND;
          if (var12.appliesTo(var13)) {

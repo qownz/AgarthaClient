@@ -1,7 +1,8 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
-import net.agartha.client.module.impl.misc.m;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.misc.NameProtectModule;
+import net.agartha.client.util.net.ChatBus;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.hud.ChatHud;
@@ -25,7 +26,7 @@ public abstract class MixinChatComponent {
    )
    private Text agartha$protectChat(Text text) {
       try {
-         m var2 = e.get(m.class);
+         NameProtectModule var2 = ModuleManager.get(NameProtectModule.class);
          if (var2 != null && var2.isEnabled()) {
             return var2.censorChat(text);
          }
@@ -40,7 +41,7 @@ public abstract class MixinChatComponent {
       at = {@At("HEAD")}
    )
    private void agartha$onAddMessage(Text text, CallbackInfo callbackInfo) {
-      net.agartha.client.util.m.publish(text.getString());
+      ChatBus.publish(text.getString());
    }
 
    @Inject(
@@ -48,6 +49,6 @@ public abstract class MixinChatComponent {
       at = {@At("HEAD")}
    )
    private void agartha$onAddMessageSigned(Text text, MessageSignatureData messageSignatureData, MessageIndicator messageIndicator, CallbackInfo callbackInfo) {
-      net.agartha.client.util.m.publish(text.getString());
+      ChatBus.publish(text.getString());
    }
 }

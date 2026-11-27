@@ -1,13 +1,13 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.module.e;
+import net.agartha.client.module.ModuleManager;
+import net.agartha.client.module.impl.render.EspActiveCache;
+import net.agartha.client.module.impl.render.EspModule;
+import net.agartha.client.module.impl.render.ItemEspModule;
 import net.agartha.client.module.impl.render.NetheriteFinderModule;
-import net.agartha.client.module.impl.render.b;
-import net.agartha.client.module.impl.render.c;
-import net.agartha.client.module.impl.render.i;
-import net.agartha.client.module.impl.render.m;
-import net.agartha.client.module.impl.render.q;
-import net.agartha.client.module.impl.render.r;
+import net.agartha.client.module.impl.render.NoRenderModule;
+import net.agartha.client.module.impl.render.PlayerEspModule;
+import net.agartha.client.module.impl.render.PlayerOverlayModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.entity.Entity;
@@ -26,19 +26,19 @@ public class MixinEntity {
       cancellable = true
    )
    private void agartha$isCurrentlyGlowing(CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
-      if (!b.anyActive()) {
-         m var4 = e.get(m.class);
+      if (!EspActiveCache.anyActive()) {
+         NoRenderModule var4 = ModuleManager.get(NoRenderModule.class);
          if (var4 != null && var4.noGlowing()) {
             callbackInfoReturnable.setReturnValue(false);
          }
       } else {
          Entity var2 = (Entity)(Object)this;
-         if ((!b.overlayActive() || !r.shouldGlow(var2))
-            && (!b.playerActive() || !q.shouldGlow(var2))
-            && (!b.espActive() || !c.shouldGlow(var2))
-            && (!b.itemActive() || !i.shouldGlow(var2))
-            && (!b.netheriteActive() || !NetheriteFinderModule.shouldGlow(var2))) {
-            m var3 = e.get(m.class);
+         if ((!EspActiveCache.overlayActive() || !PlayerOverlayModule.shouldGlow(var2))
+            && (!EspActiveCache.playerActive() || !PlayerEspModule.shouldGlow(var2))
+            && (!EspActiveCache.espActive() || !EspModule.shouldGlow(var2))
+            && (!EspActiveCache.itemActive() || !ItemEspModule.shouldGlow(var2))
+            && (!EspActiveCache.netheriteActive() || !NetheriteFinderModule.shouldGlow(var2))) {
+            NoRenderModule var3 = ModuleManager.get(NoRenderModule.class);
             if (var3 != null && var3.noGlowing()) {
                callbackInfoReturnable.setReturnValue(false);
             }
@@ -54,17 +54,17 @@ public class MixinEntity {
       cancellable = true
    )
    private void agartha$getTeamColor(CallbackInfoReturnable<Integer> callbackInfoReturnable) {
-      if (b.anyActive()) {
+      if (EspActiveCache.anyActive()) {
          Entity var2 = (Entity)(Object)this;
-         if (b.overlayActive() && r.shouldGlow(var2)) {
-            callbackInfoReturnable.setReturnValue(r.glowColor(var2));
-         } else if (b.playerActive() && q.shouldGlow(var2)) {
-            callbackInfoReturnable.setReturnValue(q.glowColor(var2));
-         } else if (b.espActive() && c.shouldGlow(var2)) {
-            callbackInfoReturnable.setReturnValue(c.glowColor(var2));
-         } else if (b.itemActive() && i.shouldGlow(var2)) {
-            callbackInfoReturnable.setReturnValue(i.glowColor(var2));
-         } else if (b.netheriteActive() && NetheriteFinderModule.shouldGlow(var2)) {
+         if (EspActiveCache.overlayActive() && PlayerOverlayModule.shouldGlow(var2)) {
+            callbackInfoReturnable.setReturnValue(PlayerOverlayModule.glowColor(var2));
+         } else if (EspActiveCache.playerActive() && PlayerEspModule.shouldGlow(var2)) {
+            callbackInfoReturnable.setReturnValue(PlayerEspModule.glowColor(var2));
+         } else if (EspActiveCache.espActive() && EspModule.shouldGlow(var2)) {
+            callbackInfoReturnable.setReturnValue(EspModule.glowColor(var2));
+         } else if (EspActiveCache.itemActive() && ItemEspModule.shouldGlow(var2)) {
+            callbackInfoReturnable.setReturnValue(ItemEspModule.glowColor(var2));
+         } else if (EspActiveCache.netheriteActive() && NetheriteFinderModule.shouldGlow(var2)) {
             callbackInfoReturnable.setReturnValue(NetheriteFinderModule.glowColor(var2));
          }
       }
@@ -76,7 +76,7 @@ public class MixinEntity {
       cancellable = true
    )
    private void agartha$noInvisibility(PlayerEntity playerEntity, CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
-      m var3 = e.get(m.class);
+      NoRenderModule var3 = ModuleManager.get(NoRenderModule.class);
       if (var3 != null && var3.noInvisibility()) {
          callbackInfoReturnable.setReturnValue(false);
       }

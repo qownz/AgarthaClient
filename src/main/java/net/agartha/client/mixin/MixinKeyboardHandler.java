@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.f;
+import net.agartha.client.event.impl.KeyInputEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Keyboard;
@@ -19,7 +19,7 @@ public abstract class MixinKeyboardHandler {
       cancellable = true
    )
    private void agartha$onKeyPress(long l, int i, KeyInput keyInput, CallbackInfo callbackInfo) {
-      if (f.dispatch(keyInput.key(), keyInput.scancode(), i, keyInput.modifiers())) {
+      if (KeyInputEvent.dispatch(keyInput.key(), keyInput.scancode(), i, keyInput.modifiers())) {
          callbackInfo.cancel();
       }
    }

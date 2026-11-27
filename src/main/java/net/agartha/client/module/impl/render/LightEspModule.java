@@ -12,14 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.o;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.module.b;
-import net.agartha.client.module.a_pkg.c;
-import net.agartha.client.module.a_pkg.j;
-import net.agartha.client.util.af;
-import net.agartha.client.util.l;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.Render3DEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.module.setting.ColorSetting;
+import net.agartha.client.module.setting.NumberSetting;
+import net.agartha.client.util.render.FrustumCulling;
+import net.agartha.client.util.world.ViewDistance;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -35,7 +37,7 @@ import net.minecraft.world.debug.gizmo.GizmoDrawing;
 import net.minecraft.world.debug.gizmo.VisibilityConfigurable;
 
 @Environment(EnvType.CLIENT)
-public class LightEspModule extends b {
+public class LightEspModule extends Module {
    private static final long SCAN_COOLDOWN_MS = 1000L;
    private static final long OPTIMIZE_COOLDOWN_MS = 1750L;
    private static final int MAX_BOXES = 12000;
@@ -46,12 +48,12 @@ public class LightEspModule extends b {
    private volatile long lastOptimizeTime;
    private volatile Map<Integer, List<Box>> renderData = new HashMap<>();
    private final Set<BlockPos> skip = ConcurrentHashMap.newKeySet();
-   private final j sMinLight = (j)this.addSetting(new j("Min Light", 5.0F, 1.0F, 15.0F));
-   private final net.agartha.client.module.a_pkg.b sDenoise = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Denoise", true));
-   private final c sColor = (c)this.addSetting(new c("Color", -2130719744));
+   private final NumberSetting sMinLight = (NumberSetting)this.addSetting(new NumberSetting("Min Light", 5.0F, 1.0F, 15.0F));
+   private final BooleanSetting sDenoise = (BooleanSetting)this.addSetting(new BooleanSetting("Denoise", true));
+   private final ColorSetting sColor = (ColorSetting)this.addSetting(new ColorSetting("Color", -2130719744));
 
    public LightEspModule() {
-      super("Light Debug", "Finds player-made spots underground.", net.agartha.client.module.c.DONUT);
+      super("Light Debug", "Finds player-made spots underground.", ModuleCategory.DONUT);
    }
 
    protected void onEnable() {
@@ -78,8 +80,8 @@ public class LightEspModule extends b {
       this.scanning.set(false);
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null) {
          long var3 = System.currentTimeMillis();
@@ -108,7 +110,7 @@ public class LightEspModule extends b {
             return;
          }
 
-         int var3 = af.chunks();
+         int var3 = ViewDistance.chunks();
          int var4 = clampInt(num(this.sMinLight, 5), 1, 15);
          int var5 = var2.getBottomY();
          byte var6 = -1;
@@ -284,8 +286,8 @@ public class LightEspModule extends b {
          && blockPos.getY() <= k;
    }
 
-   @f
-   public void onRender3D(o arg) {
+   @EventListener
+   public void onRender3D(Render3DEvent arg) {
       Map var2 = this.renderData;
       if (!var2.isEmpty() && this.sColor != null) {
          int var3 = this.sColor.argb();
@@ -305,7 +307,7 @@ public class LightEspModule extends b {
             DrawStyle var17 = DrawStyle.filledAndStroked(var16, 1.5F, var15);
 
             for (Box var19 : (Iterable<Box>) (List)var9.getValue()) {
-               if (net.agartha.client.util.l.isSafeCuboid(var19)) {
+               if (FrustumCulling.isSafeCuboid(var19)) {
                   VisibilityConfigurable var20 = GizmoDrawing.box(var19, var17);
                   var20.ignoreOcclusion();
                }
@@ -318,7 +320,7 @@ public class LightEspModule extends b {
       return this.sDenoise != null && this.sDenoise.value().get();
    }
 
-   private static int num(j arg, int i) {
+   private static int num(NumberSetting arg, int i) {
       return arg == null ? i : Math.round(arg.value()[0]);
    }
 

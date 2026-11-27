@@ -11,17 +11,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import net.agartha.client.d.f;
-import net.agartha.client.d.a_pkg.j;
-import net.agartha.client.d.a_pkg.k;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.e.ak;
-import net.agartha.client.e.n;
-import net.agartha.client.module.b;
-import net.agartha.client.module.c;
-import net.agartha.client.util.ab;
-import net.agartha.client.util.x;
-import net.agartha.client.util.x.a;
+import net.agartha.client.event.EventListener;
+import net.agartha.client.event.impl.PacketReceiveNettyEvent;
+import net.agartha.client.event.impl.PacketSendEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.gui.NotificationSounds;
+import net.agartha.client.gui.RegionData;
+import net.agartha.client.module.Module;
+import net.agartha.client.module.ModuleCategory;
+import net.agartha.client.module.setting.BooleanSetting;
+import net.agartha.client.util.net.ChatSender;
+import net.agartha.client.util.net.StaffTracker;
+import net.agartha.client.util.net.StaffTracker.a;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -67,7 +68,7 @@ import net.minecraft.util.math.BlockPos.Mutable;
 import net.minecraft.world.World;
 
 @Environment(EnvType.CLIENT)
-public final class StaffAlertModule extends b {
+public final class StaffAlertModule extends Module {
    private static final String PROBE = "minecraft:msg ";
    private static final int PROBE_INTERVAL = 100;
    private static final int SETTLE_TICKS = 60;
@@ -96,7 +97,7 @@ public final class StaffAlertModule extends b {
    private static final int NOTE_REMOVE = 2;
    private static final int NOTE_CHAT = 3;
    private static final int NOTE_PROBE = 4;
-   private final net.agartha.client.module.a_pkg.b sound = (net.agartha.client.module.a_pkg.b)this.addSetting(new net.agartha.client.module.a_pkg.b("Sound", true));
+   private final BooleanSetting sound = (BooleanSetting)this.addSetting(new BooleanSetting("Sound", true));
    private final ConcurrentLinkedQueue<StaffAlertModule.Note> notes = new ConcurrentLinkedQueue<>();
    private final ConcurrentLinkedQueue<StaffAlertModule.Sense> senses = new ConcurrentLinkedQueue<>();
    private final ArrayDeque<StaffAlertModule.Signal> signals = new ArrayDeque<>();
@@ -131,7 +132,7 @@ public final class StaffAlertModule extends b {
    private boolean testBanner;
 
    public StaffAlertModule() {
-      super("Staff Alert", "Warns when a vanished staff member is on your server, and again when they come near.", c.DONUT);
+      super("Staff Alert", "Warns when a vanished staff member is on your server, and again when they come near.", ModuleCategory.DONUT);
    }
 
    protected void onDisable() {
@@ -148,9 +149,9 @@ public final class StaffAlertModule extends b {
       this.bannerName = "Test";
       this.bannerDetail = "nearby";
       this.bannerStart = System.nanoTime();
-      ab.send("Staff", "Test is nearby");
+      ChatSender.send("Staff", "Test is nearby");
       if (this.sound.get() && var1.getSoundManager() != null) {
-         var1.getSoundManager().play(PositionedSoundInstance.ui(ak.resolve("Pop 1"), 1.0F, 0.85F));
+         var1.getSoundManager().play(PositionedSoundInstance.ui(NotificationSounds.resolve("Pop 1"), 1.0F, 0.85F));
       }
    }
 
@@ -211,8 +212,8 @@ public final class StaffAlertModule extends b {
       this.lastServerName = "";
    }
 
-   @f
-   public void onPacket(j arg) {
+   @EventListener
+   public void onPacket(PacketReceiveNettyEvent arg) {
       this.captureSense(arg);
       if (arg.packet instanceof PlayerRemoveS2CPacket var8) {
          if (var8.profileIds().size() < 4) {
@@ -261,11 +262,11 @@ public final class StaffAlertModule extends b {
       }
    }
 
-   @f
-   public void onTick(q arg) {
+   @EventListener
+   public void onTick(TickEvent arg) {
       MinecraftClient var2 = MinecraftClient.getInstance();
       if (var2.world != null && var2.player != null && var2.getNetworkHandler() != null) {
-         int var3 = var2.world.getRegistryKey() == World.OVERWORLD ? n.regionAt(var2.player.getX(), var2.player.getZ()) : Integer.MIN_VALUE;
+         int var3 = var2.world.getRegistryKey() == World.OVERWORLD ? RegionData.regionAt(var2.player.getX(), var2.player.getZ()) : Integer.MIN_VALUE;
          if (var2.world != this.level || var2.getNetworkHandler() != this.connection || var3 != this.region) {
             this.clear();
             this.level = var2.world;
@@ -302,8 +303,8 @@ public final class StaffAlertModule extends b {
       }
    }
 
-   @f
-   public void onSend(k arg) {
+   @EventListener
+   public void onSend(PacketSendEvent arg) {
       if (arg.packet instanceof PlayerInteractBlockC2SPacket var2) {
          this.lastLocalActionMs = System.currentTimeMillis();
          if (var2.getBlockHitResult() != null) {
@@ -327,7 +328,7 @@ public final class StaffAlertModule extends b {
    private void learnStaff() {
       long var1 = System.currentTimeMillis();
 
-      for (a var4 : x.online()) {
+      for (a var4 : StaffTracker.online()) {
          if (var4.name() != null) {
             this.staffNames.add(var4.name().toLowerCase(Locale.ROOT));
          }
@@ -337,7 +338,7 @@ public final class StaffAlertModule extends b {
          for (PlayerListEntry var8 : this.connection.getListedPlayerListEntries()) {
             if (var8.getProfile() != null && var8.getProfile().name() != null) {
                String var5 = var8.getProfile().name();
-               if (x.watchesAccount(var5)) {
+               if (StaffTracker.watchesAccount(var5)) {
                   this.staffNames.add(var5.toLowerCase(Locale.ROOT));
                }
 
@@ -532,9 +533,9 @@ public final class StaffAlertModule extends b {
       this.bannerName = string;
       this.bannerDetail = bl ? "nearby" : "on your server";
       this.bannerStart = System.nanoTime();
-      ab.send("Staff", string + (bl ? " is nearby" : " vanished onto your server"));
+      ChatSender.send("Staff", string + (bl ? " is nearby" : " vanished onto your server"));
       if (this.sound.get() && minecraftClient.getSoundManager() != null) {
-         minecraftClient.getSoundManager().play(PositionedSoundInstance.ui(ak.resolve("Pop 1"), 1.0F, 0.85F));
+         minecraftClient.getSoundManager().play(PositionedSoundInstance.ui(NotificationSounds.resolve("Pop 1"), 1.0F, 0.85F));
       }
    }
 
@@ -609,7 +610,7 @@ public final class StaffAlertModule extends b {
    }
 
    private boolean isStaff(String string) {
-      return string != null && (this.staffNames.contains(string.toLowerCase(Locale.ROOT)) || x.watchesAccount(string));
+      return string != null && (this.staffNames.contains(string.toLowerCase(Locale.ROOT)) || StaffTracker.watchesAccount(string));
    }
 
    private boolean leftRecently(String string) {
@@ -649,7 +650,7 @@ public final class StaffAlertModule extends b {
       }
    }
 
-   private void captureSense(j arg) {
+   private void captureSense(PacketReceiveNettyEvent arg) {
       if (this.senses.size() <= 4096) {
          if (arg.packet instanceof PlaySoundS2CPacket var7) {
             String var15 = soundId(var7.getSound());

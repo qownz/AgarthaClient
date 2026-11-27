@@ -1,6 +1,6 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.util.l;
+import net.agartha.client.util.render.FrustumCulling;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.DrawStyle;
@@ -23,7 +23,7 @@ public abstract class MixinGizmos {
       require = 0
    )
    private static void agartha$skipOffscreen(Box box, DrawStyle drawStyle, boolean bl, CallbackInfoReturnable<VisibilityConfigurable> callbackInfoReturnable) {
-      if (l.outOfView(box)) {
+      if (FrustumCulling.outOfView(box)) {
          callbackInfoReturnable.setReturnValue(GizmoCollector.NOOP_CONFIGURABLE);
       }
    }

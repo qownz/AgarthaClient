@@ -1,8 +1,8 @@
 package net.agartha.client.mixin;
 
-import net.agartha.client.d.a_pkg.a;
-import net.agartha.client.d.a_pkg.r;
-import net.agartha.client.module.e;
+import net.agartha.client.event.impl.BlockUpdateEvent;
+import net.agartha.client.event.impl.WorldEntityAddEvent;
+import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.misc.SpawnerProtectModule;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -23,7 +23,7 @@ public abstract class MixinClientLevel {
       at = {@At("HEAD")}
    )
    private void agartha$onEntityAdd(Entity entity, CallbackInfo callbackInfo) {
-      r.dispatch(entity);
+      WorldEntityAddEvent.dispatch(entity);
    }
 
    @Inject(
@@ -33,12 +33,12 @@ public abstract class MixinClientLevel {
    private void agartha$onServerVerifiedBlockState(BlockPos blockPos, BlockState blockState, int i, CallbackInfo callbackInfo) {
       ClientWorld var5 = (ClientWorld)(Object)this;
       BlockState var6 = var5.getBlockState(blockPos);
-      SpawnerProtectModule var7 = e.get(SpawnerProtectModule.class);
+      SpawnerProtectModule var7 = ModuleManager.get(SpawnerProtectModule.class);
       if (var7 != null) {
          var7.handleServerVerifiedBlockUpdate(blockPos, var6, blockState);
       }
 
-      a.dispatch(blockPos, var6, blockState);
+      BlockUpdateEvent.dispatch(blockPos, var6, blockState);
    }
 
    @Inject(
@@ -46,6 +46,6 @@ public abstract class MixinClientLevel {
       at = {@At("HEAD")}
    )
    private void agartha$onBlockUpdated(BlockPos blockPos, BlockState blockState, BlockState blockState2, int i, CallbackInfo callbackInfo) {
-      a.dispatch(blockPos, blockState, blockState2);
+      BlockUpdateEvent.dispatch(blockPos, blockState, blockState2);
    }
 }

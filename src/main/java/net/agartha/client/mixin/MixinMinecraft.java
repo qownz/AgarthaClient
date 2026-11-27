@@ -1,12 +1,12 @@
 package net.agartha.client.mixin;
 
 import net.agartha.client.compat.AgarthaDisconnectTick;
-import net.agartha.client.d.d;
-import net.agartha.client.d.a_pkg.c;
-import net.agartha.client.d.a_pkg.p;
-import net.agartha.client.d.a_pkg.q;
-import net.agartha.client.k.a;
-import net.agartha.client.k.b_o;
+import net.agartha.client.event.EventBus;
+import net.agartha.client.event.impl.EndClientTickEvent;
+import net.agartha.client.event.impl.ScanFrameEvent;
+import net.agartha.client.event.impl.TickEvent;
+import net.agartha.client.util.perf.Profiler;
+import net.agartha.client.util.perf.TickBudget;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -27,10 +27,10 @@ public abstract class MixinMinecraft {
       at = {@At("HEAD")}
    )
    private void agartha$onTickStart(CallbackInfo callbackInfo) {
-      this.agartha$tickStarted = b_o.begin();
-      a.beginTick();
-      d.INSTANCE.drainAsync();
-      q.dispatch();
+      this.agartha$tickStarted = Profiler.begin();
+      TickBudget.beginTick();
+      EventBus.INSTANCE.drainAsync();
+      TickEvent.dispatch();
    }
 
    @Inject(
@@ -42,8 +42,8 @@ public abstract class MixinMinecraft {
    )
    private void agartha$scanFrame(boolean bl, CallbackInfo callbackInfo) {
       if (((MinecraftClient)(Object)this).world != null) {
-         a.beginFrame();
-         p.dispatch();
+         TickBudget.beginFrame();
+         ScanFrameEvent.dispatch();
       }
    }
 
@@ -65,8 +65,8 @@ public abstract class MixinMinecraft {
       at = {@At("RETURN")}
    )
    private void agartha$onTickEnd(CallbackInfo callbackInfo) {
-      c.dispatch();
-      b_o.record("client.tick", this.agartha$tickStarted);
-      b_o.flushIfDue();
+      EndClientTickEvent.dispatch();
+      Profiler.record("client.tick", this.agartha$tickStarted);
+      Profiler.flushIfDue();
    }
 }
