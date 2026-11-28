@@ -1,4 +1,4 @@
-# NOTICE: this is free version of the Agartha Client.
+# NOTICE: this is free version of the Agartha Client but free/paid is same.
 
 **please use the better obfuscator lol**
 ![bestobf](b.png)
