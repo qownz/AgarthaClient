@@ -70,7 +70,6 @@ tasks.withType(Jar).configureEach {
 loom {
     runs {
         client {
-            vmArg "-Dagartha.platform.force=true"
         }
     }
 }

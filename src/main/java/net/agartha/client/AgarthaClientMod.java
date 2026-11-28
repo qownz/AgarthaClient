@@ -19,7 +19,6 @@ import net.agartha.client.macro.MacroManager;
 import net.agartha.client.module.Module;
 import net.agartha.client.module.ModuleManager;
 import net.agartha.client.module.impl.client.AgarthaModule;
-import net.agartha.client.platform.PlatformSupport;
 import net.agartha.client.render.imgui.ImGuiManager;
 import net.agartha.client.util.net.ServerTicker;
 import net.agartha.client.util.time.TpsMeter;
@@ -95,108 +94,101 @@ public final class AgarthaClientMod implements ClientModInitializer {
    }
 
    public void onInitializeClient() {
-      if (!PlatformSupport.isSupported()) {
-         LOGGER.error(
-            "[Agartha] Unsupported platform: {}. Agartha is a Windows desktop client — its interface and input bridges have no build for this system, so nothing will load.",
-            PlatformSupport.describe()
-         );
-      } else {
-         ConfigMigrator.run();
-         LOGGER.info("[Agartha] Initialising");
-         try {
-            Registry.register(Registries.SOUND_EVENT, SPAWNER_NOTIFY_SOUND_ID, SPAWNER_NOTIFY_SOUND);
-            Registry.register(Registries.SOUND_EVENT, NOTIFY_POP_1_SOUND_ID, NOTIFY_POP_1_SOUND);
-            Registry.register(Registries.SOUND_EVENT, NOTIFY_POP_2_SOUND_ID, NOTIFY_POP_2_SOUND);
-         } catch (IllegalStateException var0) {
-            LOGGER.debug("[Agartha] Sound registry already frozen; using sounds.json entries instead", var0);
+      ConfigMigrator.run();
+      LOGGER.info("[Agartha] Initialising");
+      try {
+         Registry.register(Registries.SOUND_EVENT, SPAWNER_NOTIFY_SOUND_ID, SPAWNER_NOTIFY_SOUND);
+         Registry.register(Registries.SOUND_EVENT, NOTIFY_POP_1_SOUND_ID, NOTIFY_POP_1_SOUND);
+         Registry.register(Registries.SOUND_EVENT, NOTIFY_POP_2_SOUND_ID, NOTIFY_POP_2_SOUND);
+      } catch (IllegalStateException var0) {
+         LOGGER.debug("[Agartha] Sound registry already frozen; using sounds.json entries instead", var0);
+      }
+
+      UiSounds.register();
+      ImGuiManager.getInstance().setHudRenderer(() -> {
+         if (!Hud.foreignMenuOpen()) {
+            Hud.getInstance().render();
+            RingRenderer.render();
+         }
+      }, () -> !Hud.foreignMenuOpen() && (Hud.getInstance().shouldRenderFrame() || RingRenderer.hasWork()));
+      ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+         public Identifier getFabricId() {
+            return Identifier.of("agartha", "hud_logo");
          }
 
-         UiSounds.register();
-         ImGuiManager.getInstance().setHudRenderer(() -> {
-            if (!Hud.foreignMenuOpen()) {
-               Hud.getInstance().render();
-               RingRenderer.render();
-            }
-         }, () -> !Hud.foreignMenuOpen() && (Hud.getInstance().shouldRenderFrame() || RingRenderer.hasWork()));
-         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-            public Identifier getFabricId() {
-               return Identifier.of("agartha", "hud_logo");
-            }
-
-            public void reload(ResourceManager resourceManager) {
-               BellTexture.getInstance().invalidate();
-               SpotifyArtTexture.getInstance().invalidate();
-               CanSpriteCache.invalidateAll();
-               ClawTexture.getInstance().invalidate();
-               EffectIconCache.invalidate();
-            }
-         });
-         TpsMeter.install();
-         PacketReceiveNettyEvent.TYPE.listen(LEAK_TRACKER_OWNER, arg -> BlockEntityTracker.ingest(arg.packet));
-
-         ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)minecraftClient -> {
-            HudLayout.getInstance().save();
-            ModuleConfigManager.getInstance().save();
-            MacroManager.getInstance().save();
-         });
-         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.agartha.open_gui", Type.KEYSYM, 344, KEY_CATEGORY));
-         ModuleConfigManager.getInstance().load();
-
-         for (Module var2 : ModuleManager.all()) {
-            EventBus.INSTANCE.prepare(var2);
+         public void reload(ResourceManager resourceManager) {
+            BellTexture.getInstance().invalidate();
+            SpotifyArtTexture.getInstance().invalidate();
+            CanSpriteCache.invalidateAll();
+            ClawTexture.getInstance().invalidate();
+            EffectIconCache.invalidate();
          }
+      });
+      TpsMeter.install();
+      PacketReceiveNettyEvent.TYPE.listen(LEAK_TRACKER_OWNER, arg -> BlockEntityTracker.ingest(arg.packet));
 
-         ClientTickEvents.END_CLIENT_TICK
-            .register(
-               (EndTick)minecraftClient -> {
-                  ModuleConfigManager.getInstance().applyPendingEnabled();
-                  ServerTicker.tick(minecraftClient);
-                  AgarthaModule var2x = ModuleManager.get(AgarthaModule.class);
-                  int var3 = var2x == null ? 344 : var2x.clickGuiKey();
-                  syncOpenGuiKey(var3);
-                  boolean var4 = isMenuKeyDown(minecraftClient, var3);
-                  boolean var5 = minecraftClient.currentScreen instanceof ClickGuiScreen;
-                  if (minecraftClient.world != null && minecraftClient.currentScreen != null && !var5) {
-                     openGuiKey.wasPressed();
-                  } else if (openGuiKey.wasPressed() || var4 && !this.openGuiWasDown) {
-                     toggleClickGui(minecraftClient);
-                  }
+      ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)minecraftClient -> {
+         HudLayout.getInstance().save();
+         ModuleConfigManager.getInstance().save();
+         MacroManager.getInstance().save();
+      });
+      openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.agartha.open_gui", Type.KEYSYM, 344, KEY_CATEGORY));
+      ModuleConfigManager.getInstance().load();
 
-                  this.openGuiWasDown = var4;
-                  if (!minecraftClient.isWindowFocused()) {
-                     this.releaseHoldModulesOnFocusLoss();
-                  } else if (minecraftClient.currentScreen == null) {
-                     for (Module var7 : ModuleManager.keyboundModules()) {
-                        int var8 = var7.keybind();
-                        if (var8 > 0
-                           && var8 < this.keybindLastPressed.length
-                           && !Keybind.isShiftKey(var8)
-                           && !Keybind.isClickButton(var8)) {
-                           boolean var9 = var8 >= 1000
-                              ? GLFW.glfwGetMouseButton(minecraftClient.getWindow().getHandle(), var8 - 1000) == 1
-                              : InputUtil.isKeyPressed(minecraftClient.getWindow(), var8);
-                           boolean var10 = this.keybindLastPressed[var8];
-                           if (var7.keybindTriggersAction()) {
-                              if (var9 && !var10 && var7.isEnabled()) {
-                                 var7.onKeybindAction();
-                              }
-                           } else if (var7.isHoldMode()) {
-                              if (var9 && !var10) {
-                                 var7.setEnabled(true);
-                              } else if (!var9 && var10) {
-                                 var7.setEnabled(false);
-                              }
-                           } else if (var9 && !var10) {
-                              var7.toggle();
+      for (Module var2 : ModuleManager.all()) {
+         EventBus.INSTANCE.prepare(var2);
+      }
+
+      ClientTickEvents.END_CLIENT_TICK
+         .register(
+            (EndTick)minecraftClient -> {
+               ModuleConfigManager.getInstance().applyPendingEnabled();
+               ServerTicker.tick(minecraftClient);
+               AgarthaModule var2x = ModuleManager.get(AgarthaModule.class);
+               int var3 = var2x == null ? 344 : var2x.clickGuiKey();
+               syncOpenGuiKey(var3);
+               boolean var4 = isMenuKeyDown(minecraftClient, var3);
+               boolean var5 = minecraftClient.currentScreen instanceof ClickGuiScreen;
+               if (minecraftClient.world != null && minecraftClient.currentScreen != null && !var5) {
+                  openGuiKey.wasPressed();
+               } else if (openGuiKey.wasPressed() || var4 && !this.openGuiWasDown) {
+                  toggleClickGui(minecraftClient);
+               }
+
+               this.openGuiWasDown = var4;
+               if (!minecraftClient.isWindowFocused()) {
+                  this.releaseHoldModulesOnFocusLoss();
+               } else if (minecraftClient.currentScreen == null) {
+                  for (Module var7 : ModuleManager.keyboundModules()) {
+                     int var8 = var7.keybind();
+                     if (var8 > 0
+                        && var8 < this.keybindLastPressed.length
+                        && !Keybind.isShiftKey(var8)
+                        && !Keybind.isClickButton(var8)) {
+                        boolean var9 = var8 >= 1000
+                           ? GLFW.glfwGetMouseButton(minecraftClient.getWindow().getHandle(), var8 - 1000) == 1
+                           : InputUtil.isKeyPressed(minecraftClient.getWindow(), var8);
+                        boolean var10 = this.keybindLastPressed[var8];
+                        if (var7.keybindTriggersAction()) {
+                           if (var9 && !var10 && var7.isEnabled()) {
+                              var7.onKeybindAction();
                            }
-
-                           this.keybindLastPressed[var8] = var9;
+                        } else if (var7.isHoldMode()) {
+                           if (var9 && !var10) {
+                              var7.setEnabled(true);
+                           } else if (!var9 && var10) {
+                              var7.setEnabled(false);
+                           }
+                        } else if (var9 && !var10) {
+                           var7.toggle();
                         }
+
+                        this.keybindLastPressed[var8] = var9;
                      }
                   }
                }
-            );
-      }
+            }
+         );
    }
 
    private void releaseHoldModulesOnFocusLoss() {
